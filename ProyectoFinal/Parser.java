@@ -198,7 +198,104 @@ public class Parser{
     BRIAN *************************************************
 
   */
-
+    private void instrucciones(){
+      sentencia();
+      instrucciones_p();
+  }
+  
+  private void instrucciones_p(){
+      if(tokenActual==OR){
+         sentencia();
+         instrucciones_p();
+    }
+    // producción vacía
+  }
+  
+  private void sentencia(){
+      switch(tokenActual){
+        case IF:
+              eat(IF);
+              eat(P1);
+              bool();
+              eat(P2);
+              sentencia();
+              condicional();
+              break;
+        case IDENTIFIER:
+            localizacion();
+            eat(ASIGNACION);
+            bool();
+            break;
+        case WHILE:
+               eat(WHILE);
+               eat(P1);
+               bool();
+               eat(P2);
+               sentencia();
+               break;
+        case DO:
+            eat(DO);
+            sentencia();
+            eat(WHILE);
+            eat(P1);
+            bool();
+            eat(P2);
+            break;
+        case BREAK:
+            eat(BREAK);
+            eat(PUNTOYCOMA);
+            break;
+        case L1:
+            bloque();
+            break;
+        case SWITCH:
+            eat(SWITCH);
+            eat(P1);
+            bool();
+            eat(P2);
+            eat(L1);
+            casos();
+            eat(L2);
+            break;
+        default:
+            error("Error de sintaxis");
+      }
+  }
+  
+  private void condicional(){
+      if(tokenActual == ELSE){
+          eat(ELSE);
+          sentencia();
+      }
+      //produccion vacia
+  }
+  
+  private void casos(){
+      switch(tokenActual){
+          case CASE:
+              caso();
+              casos();
+              break;
+          case DEFAULT:
+              predeterminado();
+              break;
+          default:
+              error("Error de sintaxis");
+      }
+  }
+  
+  private void caso(){
+      eat(CASE);
+      eat(INT_LIT);
+      eat(DOSPUNTOS);
+      instrucciones();
+  }
+  
+  private void predeterminado(){
+      eat(DEFAULT);
+      eat(DOSPUNTOS);
+      instrucciones();
+  }
 
   /*
     ANGEL *************************************************
