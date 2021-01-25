@@ -72,11 +72,18 @@ public class Parser{
   private String lexema;
   private int dir;
 
+  private TablaSimbolos fondoTS;
+  private TablaTipos fondoTT;
   // pilas
   private Stack<TablaSimbolos> PilaTS;
   private Stack<TablaTipos> PilaTT;
 
   private Stack<Integer> PilaDir;
+
+  private ArrayList<Integer> listaRetorno;
+
+  private CodigoIntermedio codigo;
+
 
   //CONSTRUCTOR 
   public Parser(Lexer lexer) throws IOException,Exception{
@@ -86,10 +93,17 @@ public class Parser{
     tokenActual = analizadorLexico.yylex();
     lexema = analizadorLexico.yytext();
 
+    fondoTS = new TablaSimbolos();
+    fondoTT = new TablaTipos();
+
     PilaTS = new Stack<TablaSimbolos>();
     PilaTT = new Stack<TablaTipos>();
     PilaDir = new Stack<Integer>();
 
+    PilaTS.push(fondoTS);
+    PilaTT.push(fondoTT);
+
+    codigo = new CodigoIntermedio();
   }
 
   // método que inicia
@@ -98,6 +112,7 @@ public class Parser{
     System.out.println("Cadena aceptada");
     PilaTT.peek().printTT();
     PilaTS.peek().printTS();
+    System.out.println(codigo.getCodigo());
   }
 
   /*
@@ -111,8 +126,6 @@ public class Parser{
   */
 
   private void programa() throws IOException,Exception{
-    PilaTS.push(new TablaSimbolos());
-    PilaTT.push(new TablaTipos());
     declaraciones();
     funciones();
   }
@@ -211,71 +224,126 @@ public class Parser{
 
   private void funciones() throws IOException,Exception{
     if(tokenActual==FUNC){
+      listaRetorno = new ArrayList<Integer>();
+
       PilaTS.push(new TablaSimbolos());
       PilaTT.push(new TablaTipos());
       PilaDir.push(dir);
       dir = 0;
+
+      // come palabra func
       eat(FUNC);
-      tipo();
-      eat(IDENTIFIER);
-      eat(P1);
-      argumentos();
-      eat(P2);
-      bloque();
-      PilaTT.peek().printTT();
-      PilaTS.peek().printTS();
-      PilaTS.pop();
-      PilaTT.pop();
-      dir = PilaDir.pop();
+      // tipo de la función
+      int tipoTipo = tipo();
+
+      //identificador de la función
+      String id = lexema;      
+      
+      if(!fondoTS.buscar(id)){
+        eat(IDENTIFIER);
+        // argumentos de la función
+        eat(P1);
+        ArrayList<Integer> argumentosLista = argumentos();
+        eat(P2);
+
+        // bloque
+        String bloqueSig = Semantico.nuevaEtiqueta();
+
+        codigo.genCod("label",id);
+        codigo.genCod("label",bloqueSig);
+
+        // bloque
+        bloque(bloqueSig);
+
+        // comprobación
+        if(Semantico.equivalentesLista(listaRetorno,tipoTipo)){
+          PilaTT.peek().printTT();
+          PilaTS.peek().printTS();
+          PilaTS.pop();
+          PilaTT.pop();
+          dir = PilaDir.pop();
+          PilaTS.peek().insertar(new Simbolo(id,0,tipoTipo,"func",argumentosLista));
+        }else{
+          error("El tipo de retorno no son equivalentes");
+        }
+      }else{
+        error("Error semántico, el id "+id+" ya está definido");
+      }
       funciones();
     }
     // Producción vacía
   }
 
-  private void argumentos() throws IOException,Exception{
+  private ArrayList<Integer> argumentos() throws IOException,Exception{
     switch(tokenActual){
       case INT:
       case FLOAT:
       case CHAR:
       case DOUBLE:
       case VOID:
-        lista_args();
-        break;
+        ArrayList<Integer> argumentosLista = lista_args();
+        return argumentosLista;
     }
     // Producción vacía
+    return null;
   }
 
-  private void lista_args() throws IOException,Exception{
+  private ArrayList<Integer> lista_args() throws IOException,Exception{
     switch(tokenActual){
       case INT:
       case FLOAT:
       case CHAR:
       case DOUBLE:
       case VOID:
-        tipo();
-        eat(IDENTIFIER);
-        lista_args_p();
-        break;
+
+        int tipoTipo = tipo();
+        String id = lexema;
+
+        if(!PilaTS.peek().buscar(id)){
+          eat(IDENTIFIER);
+          PilaTS.peek().insertar(new Simbolo(lexema,dir,tipoTipo,"var",null));
+          dir += PilaTT.peek().getTam(tipoTipo);
+        }else{
+          error("Error semántico, el identificador "+id+" ya se encuentra delarado como argumento");
+        }
+        ArrayList<Integer> lista_argsLista = lista_args_p();
+        lista_argsLista.add(tipoTipo);
+
+        return Semantico.invertir(lista_argsLista);
       default:
         error("Error sintáctico, se esperaba un tipo de dato");
     }
+    return null;
   }
 
-  private void lista_args_p() throws IOException,Exception{
+  private ArrayList<Integer> lista_args_p() throws IOException,Exception{
     if(tokenActual==COMA){
       eat(COMA);
-      tipo();
-      eat(IDENTIFIER);
-      lista_args_p();
+
+      int tipoTipo = tipo();
+      String id = lexema;
+
+      if(!PilaTS.peek().buscar(id)){
+        eat(IDENTIFIER);
+        PilaTS.peek().insertar(new Simbolo(lexema,dir,tipoTipo,"var",null));
+        dir += PilaTT.peek().getTam(tipoTipo);
+      }else{
+        error("Error semántico, el identificador "+id+" ya se encuentra delarado como argumento");
+      }
+
+      ArrayList<Integer> lista_argsLista = lista_args_p();
+      lista_argsLista.add(tipoTipo);
+      return lista_argsLista;
     }
-    // producción vacía
+    return new ArrayList<Integer>();
   }
 
-  private void bloque() throws IOException,Exception{
+  private void bloque(String bloqueSig) throws IOException,Exception{
     if(tokenActual==L1){
       eat(L1);
       declaraciones();
-      instrucciones();
+      codigo.genCod("label",bloqueSig);
+      instrucciones(bloqueSig);
       eat(L2);
     }else{
       error("Error sintáctico, se esperaba {");
@@ -284,12 +352,18 @@ public class Parser{
   /*
     BRIAN *************************************************
   */
-  private void instrucciones() throws IOException,Exception{
+  private void instrucciones(String instruccionesSig) throws IOException,Exception{
+    /*String sentenciaSig = Semantico.nuevaEtiqueta();
+    sentencia(sentenciaSig);
+    codigo.genCod("label",sentenciaSig);
+    instrucciones_p(instruccionesSig);*/
+    String sentenciaSig = Semantico.nuevaEtiqueta();
     sentencia();
-    instrucciones_p();
+    codigo.genCod("label",sentenciaSig);
+    instrucciones_p(instruccionesSig);
   }
 
-  private void instrucciones_p() throws IOException,Exception{
+  private void instrucciones_p(String instrucciones_pSig) throws IOException,Exception{
     switch(tokenActual){
       case IF:
       case IDENTIFIER:
@@ -299,8 +373,12 @@ public class Parser{
       case L1:
       case SWITCH:
       case RETURN:
+        /*String sentenciaSig = Semantico.nuevaEtiqueta();
+        sentencia(sentenciaSig);
+        codigo.genCod("label",sentenciaSig);
+        instrucciones_p(instrucciones_pSig);*/
         sentencia();
-        instrucciones_p();
+        instrucciones_p(instrucciones_pSig);
         break;
       //default:
         //producción vacía
@@ -344,7 +422,7 @@ public class Parser{
         eat(PUNTOYCOMA);
         break;
       case L1:
-        bloque();
+        bloque("");
         break;
       case SWITCH:
         eat(SWITCH);
@@ -399,15 +477,15 @@ public class Parser{
     eat(CASE);
     eat(INT_LIT);
     eat(DOSPUNTOS);
-    instrucciones();
+    instrucciones("");
   }
 
   private void predeterminado() throws IOException,Exception{
     eat(DEFAULT);
     eat(DOSPUNTOS);
-    instrucciones();
+    instrucciones("");
     sentencia();
-    instrucciones_p();
+    instrucciones_p("");
   }
 
   /*

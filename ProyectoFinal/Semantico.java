@@ -1,10 +1,18 @@
+import java.util.ArrayList;
+
 public class Semantico{
 
-  public static int numTemporal=-1;
+  public static int numTemporal=0;
+  public static int numEtiqueta=0;
 
   // método para generar una nueva temporal
-  public static STring nuevaTemporal(){
+  public static String nuevaTemporal(){
     return "t"+numTemporal++;
+  }
+
+  // método para generar una nueva temporal
+  public static String nuevaEtiqueta(){
+    return "etq"+numEtiqueta++;
   }
 
   // método que nos indica si dos tipos son equivalentes
@@ -12,7 +20,19 @@ public class Semantico{
     if(tipo1 == tipo2) return true;
     if(tipo1 == 0 && tipo2 == 1) return true;
     if(tipo1 == 1 && tipo2 == 0) return true;
+    if(tipo1 == -1 || tipo2==-1) return true;
     return false;
+  }
+
+  // método que nos indica si los tipos de una lista son equivalentes a los de
+  // un tipo especifico
+  public static boolean equivalentesLista(ArrayList<Integer> lista, int tipo){
+    for (int ele : lista ) {
+      if(!equivalentes(ele,tipo)){
+        return false;
+      }
+    }
+    return true;
   }
 
   // Método para ampliar un tipo de dato 
@@ -21,7 +41,7 @@ public class Semantico{
     String temp;
     if(menor==0 && mayor==1){
       temp = nuevaTemporal();
-      cod.generarCodigo(new Cuadrupla("=","(float)"+d,"",temp)); // temp = (float)d
+      cod.genCod(new Cuadrupla("=","(float)"+d,"",temp)); // temp = (float)d
       return temp;
     }
     return null;
@@ -33,9 +53,17 @@ public class Semantico{
     String temp;
     if(menor==0 && mayor==1){
       temp = nuevaTemporal();
-      cod.generarCodigo(new Cuadrupla("=","(int)"+d,"",temp)); // temp = (int)d
+      cod.genCod(new Cuadrupla("=","(int)"+d,"",temp)); // temp = (int)d
       return temp;
     }
     return null;
+  }
+
+  public static ArrayList<Integer> invertir(ArrayList<Integer> lista){
+    ArrayList<Integer> retorno = new ArrayList<Integer>();
+    for(int i=lista.size()-1;i>=0;i--){
+      retorno.add(lista.get(i));
+    }
+    return retorno;
   }
 }

@@ -1,0 +1,9 @@
+int a;
+float b;
+double c;
+char d;
+int[10][5] e,f,g,h;
+
+func int A(int a, float b, char c, double d, int[10] e){
+
+}

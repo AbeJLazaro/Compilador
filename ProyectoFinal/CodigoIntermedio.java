@@ -10,15 +10,23 @@ public class CodigoIntermedio{
   }
 
   // método que agrega código
-  public void generarCodigo(Cuadrupla cuadrupla){
+  public void genCod(Cuadrupla cuadrupla){
     codigo.add(cuadrupla);
+  }
+
+  public void genCod(String tipo, String cadena){
+    if(tipo.equals("label")){
+      codigo.add(new Cuadrupla(1,cadena));
+    }
   }
 
   // get para mostrar el código generado
   public String getCodigo(){
     String texto="";
     for (Cuadrupla cuad : codigo) {
-      texto+=cuad.toString();
+      texto+=cuad.toString()+"\n";
     }
+    return texto;
   }
+
 }

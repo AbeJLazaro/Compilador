@@ -12,8 +12,19 @@ public class Cuadrupla{
     this.arg2 = arg2;
     this.res = res;
   }
-  
-  public toString(){
-    return op+" "+arg1+" "+arg2+" "+res;
+
+  public Cuadrupla(int tipo, String codigo){
+    switch(tipo){
+      case 1:
+        op = codigo;
+        arg1 = "";
+        arg2 = "";
+        res = "";
+    }
   }
+  
+  public String toString(){
+    return res+" "+arg1+" "+op+" "+arg2;
+  }
+  
 }
