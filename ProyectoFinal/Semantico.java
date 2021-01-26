@@ -47,6 +47,15 @@ public class Semantico{
     return null;
   }
 
+  //método que encuentra el tipo de dato más grande
+  public static int maximo(int a, int b){
+    if(a==1 || b==1) {
+      return 1;
+    }else{
+      return 0;
+    } 
+  }
+
   // Método para reducir un tipo de dato
   public static String reducir(String d, int mayor, int menor, CodigoIntermedio cod){
     if(menor == mayor) return d;

@@ -20,6 +20,11 @@ public class Cuadrupla{
         arg1 = "";
         arg2 = "";
         res = "";
+      case 2:
+        op = "goto";
+        arg1 = codigo;
+        arg2 = "";
+        res = "";
     }
   }
   

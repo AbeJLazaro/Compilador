@@ -20,6 +20,10 @@ public class CodigoIntermedio{
     }
   }
 
+  public void genCod(String cadena){
+    codigo.add(new Cuadrupla(1,cadena));
+  }
+
   // get para mostrar el código generado
   public String getCodigo(){
     String texto="";

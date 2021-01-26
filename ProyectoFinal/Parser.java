@@ -353,12 +353,8 @@ public class Parser{
     BRIAN *************************************************
   */
   private void instrucciones(String instruccionesSig) throws IOException,Exception{
-    /*String sentenciaSig = Semantico.nuevaEtiqueta();
-    sentencia(sentenciaSig);
-    codigo.genCod("label",sentenciaSig);
-    instrucciones_p(instruccionesSig);*/
     String sentenciaSig = Semantico.nuevaEtiqueta();
-    sentencia();
+    sentencia(sentenciaSig);
     codigo.genCod("label",sentenciaSig);
     instrucciones_p(instruccionesSig);
   }
@@ -373,11 +369,9 @@ public class Parser{
       case L1:
       case SWITCH:
       case RETURN:
-        /*String sentenciaSig = Semantico.nuevaEtiqueta();
+        String sentenciaSig = Semantico.nuevaEtiqueta();
         sentencia(sentenciaSig);
         codigo.genCod("label",sentenciaSig);
-        instrucciones_p(instrucciones_pSig);*/
-        sentencia();
         instrucciones_p(instrucciones_pSig);
         break;
       //default:
@@ -386,106 +380,187 @@ public class Parser{
     // producción vacía
   }
 
-  private void sentencia() throws IOException,Exception{
+  private void sentencia(String sentenciaSig) throws IOException,Exception{
+    String boolVddr,boolFls,sentencia1Sig;
+    ArrayList<String> boolAtributos,localizacionAtributos;
+
     switch(tokenActual){
       case IF:
         eat(IF);
         eat(P1);
-        bool();
+
+        boolVddr = Semantico.nuevaEtiqueta();
+        boolFls = sentenciaSig;
+        bool(boolVddr,boolFls);
+
         eat(P2);
-        sentencia();
-        condicional();
+        codigo.genCod("label",boolVddr);
+        sentencia(sentenciaSig);
+        int flag = condicional(sentenciaSig);
+
+        if(flag == 1){
+          boolFls=Semantico.nuevaEtiqueta();
+          codigo.genCod("goto "+sentenciaSig);
+          codigo.genCod("label",boolFls);
+        }
         break;
       case IDENTIFIER:
-        localizacion();
+        // este va a cambiar su nombre, revisarlo
+        localizacionAtributos = localizacion();
         eat(ASIGNACION);
-        bool();
+
+        boolAtributos = bool(Semantico.nuevaEtiqueta(),Semantico.nuevaEtiqueta());
         eat(PUNTOYCOMA);
+
+        int localizacionTipo = Integer.parseInt(localizacionAtributos.get(0));
+        String localizacionDir = localizacionAtributos.get(1);
+        int boolTipo = Integer.parseInt(boolAtributos.get(0));
+        String boolDir = boolAtributos.get(1);
+
+        if(Semantico.equivalentes(localizacionTipo,boolTipo)){
+          String d1 = Semantico.reducir(boolDir, boolTipo, localizacionTipo, codigo);
+          codigo.genCod(new Cuadrupla("", d1, "", localizacionDir));
+        }else{
+          error("Error semántico, tipos incompatibles");
+        }
         break;
       case WHILE:
         eat(WHILE);
         eat(P1);
-        bool();
+
+        sentencia1Sig = Semantico.nuevaEtiqueta();
+        codigo.genCod("label",sentencia1Sig);
+
+        boolVddr = Semantico.nuevaEtiqueta();
+        boolFls = sentenciaSig;
+
+        bool(boolVddr,boolFls);
         eat(P2);
-        sentencia();
+
+        sentencia(sentencia1Sig);
+        codigo.genCod("label",boolVddr);
+        codigo.genCod("goto "+sentencia1Sig);
+
         break;
       case DO:
         eat(DO);
-        sentencia();
+
+        sentencia1Sig = Semantico.nuevaEtiqueta();
+        boolVddr = Semantico.nuevaEtiqueta();
+        boolFls = sentenciaSig;
+
+        codigo.genCod("label",boolVddr);
+        sentencia(sentencia1Sig);
+        codigo.genCod("label",sentencia1Sig);
+
         eat(WHILE);
         eat(P1);
-        bool();
+        bool(boolVddr,boolFls);
         eat(P2);
         break;
       case BREAK:
         eat(BREAK);
         eat(PUNTOYCOMA);
+        codigo.genCod("goto "+sentenciaSig);
         break;
       case L1:
-        bloque("");
+        bloque(sentenciaSig);
         break;
-      case SWITCH:
+      case SWITCH: 
         eat(SWITCH);
         eat(P1);
-        bool();
+
+        boolAtributos = bool(Semantico.nuevaEtiqueta(),Semantico.nuevaEtiqueta());
+        String casosEtqPrueba = Semantico.nuevaEtiqueta();
+        codigo.genCod("goto "+casosEtqPrueba);
+
         eat(P2);
         eat(L1);
-        casos();
+
+        String casosSig = sentenciaSig;
+        String casosId = boolAtributos.get(1);
+        String casosPrueba = casos(casosSig, casosId);
+
         eat(L2);
+        codigo.genCod(casosPrueba);
         break;
       case RETURN:
         eat(RETURN);
-        return_p();
+        int returnTipo = return_p();
+        listaRetorno.add(returnTipo);
         break;
       //default:
         // producción vacía
     }
   }
 
-  private void condicional() throws IOException,Exception{
+  private int condicional(String condicionalSig) throws IOException,Exception{
     if(tokenActual == ELSE){
       eat(ELSE);
-      sentencia();
+      sentencia(condicionalSig);
+      return 1;
     }
-    //produccion vacia
+    return 0;
   }
 
-  private void return_p() throws IOException,Exception{
+  private int return_p() throws IOException,Exception{
     if(tokenActual==PUNTOYCOMA){
       eat(PUNTOYCOMA);
+      codigo.genCod("return");
+      // número de void
+      return 4;
     }else{
-      exp();
+      ArrayList<String> expAtributos = exp("",""); 
+      int expTipo = Integer.parseInt(expAtributos.get(0));
+      String expDir = expAtributos.get(1);
+      codigo.genCod("return "+expDir);
       eat(PUNTOYCOMA);
+      return expTipo;
     }
   }
 
-  private void casos() throws IOException,Exception{
+  private String casos(String casosSig, String casosId) throws IOException,Exception{
     switch(tokenActual){
       case CASE:
-        caso();
-        casos();
-        break;
+        String casoPrueba = caso(casosSig,casosId);
+        String casos1Prueba = casos(casosSig,casosId);
+        return casoPrueba + casos1Prueba;
       case DEFAULT:
-        predeterminado();
-        break;
-      default:
-        error("Error de sintaxis");
+        String predeterminadoPrueba = predeterminado(casosSig);
+        return predeterminadoPrueba;
     }
+    return "";
   }
 
-  private void caso() throws IOException,Exception{
+  private String caso(String casoSig, String casoId) throws IOException,Exception{
     eat(CASE);
-    eat(INT_LIT);
+    String numero = lexema;
+    if(tokenActual==INT_LIT){
+      eat(INT_LIT);
+    }else if(tokenActual==FLOAT_LIT){
+      eat(FLOAT_LIT);
+    }else{
+      error("Error sintáctico, se esperaba un número");
+    }
     eat(DOSPUNTOS);
-    instrucciones("");
+    
+    String casoInicio = Semantico.nuevaEtiqueta();
+    String casoPrueba = "if "+casoId+"=="+numero+" goto "+casoInicio;
+    codigo.genCod("label",casoInicio);
+    instrucciones(casoSig);
+
+    return casoPrueba;
   }
 
-  private void predeterminado() throws IOException,Exception{
+  private String predeterminado(String predeterminadoSig) throws IOException,Exception{
     eat(DEFAULT);
     eat(DOSPUNTOS);
-    instrucciones("");
-    sentencia();
-    instrucciones_p("");
+    String predeterminadoInicio = Semantico.nuevaEtiqueta();
+    String instruccionesSig = predeterminadoSig;
+    String predeterminadoPrueba = "goto "+predeterminadoInicio;
+    codigo.genCod("label",predeterminadoInicio);
+    instrucciones(instruccionesSig);
+    return predeterminadoPrueba;
   }
 
   /*
@@ -501,9 +576,10 @@ public class Parser{
   */
   
   // bool -> comb bool_p
-  private void bool() throws IOException,Exception{
+  private ArrayList<String> bool(String boolVddr,String boolFls) throws IOException,Exception{
     comb();
     bool_p();
+    return null;
   }
   
   //bool_p → || comb bool_p | ε 
@@ -551,7 +627,7 @@ public class Parser{
   
   //rel → exp rel_p
   private void rel() throws IOException,Exception{
-    exp();
+    exp("","");
     rel_p();
   }
   
@@ -559,71 +635,212 @@ public class Parser{
   private void rel_p() throws IOException,Exception{
     if(tokenActual==LT){
       eat(LT);
-      exp();
+      exp("","");
     }else if(tokenActual==LET){
       eat(LET);
-      exp();
+      exp("","");
     }else if(tokenActual==MET){
       eat(MET);
-      exp();
+      exp("","");
     }else if(tokenActual==MT){
       eat(MT);
-      exp();
+      exp("","");
     }
   }
   
   //exp → term exp_p
-  private void exp() throws IOException,Exception{
-    term();
-    exp_p();
+  private ArrayList<String> exp(String expVddr, String expFls) throws IOException,Exception{
+
+    ArrayList<String> atributosRet = new ArrayList<String>();
+    ArrayList<String> termAtributos =term();
+    ArrayList<String> exp_pAtributos = exp_p();
+
+    int termTipo = Integer.parseInt(termAtributos.get(0));
+    String termDir = termAtributos.get(1);
+    int exp_pTipo = Integer.parseInt(exp_pAtributos.get(0));
+    String exp_pDir = exp_pAtributos.get(1);
+    String exp_pOp = exp_pAtributos.get(2);
+
+    if(Semantico.equivalentes(exp_pTipo, termTipo)){
+      int expTipo;
+      String expDir, d1, d2;
+
+      if(exp_pTipo != -1){
+        expTipo = Semantico.maximo(exp_pTipo, termTipo);
+        expDir = Semantico.nuevaTemporal();
+        d1 = Semantico.ampliar(exp_pDir, exp_pTipo, expTipo,codigo);
+        d2 = Semantico.ampliar(termDir, termTipo, expTipo,codigo);
+        codigo.genCod(new Cuadrupla(exp_pOp, d1, d2, expDir));
+      }else{
+        expTipo = termTipo;
+        expDir = termDir;
+      }
+
+      atributosRet.add(Integer.toString(expTipo));
+      atributosRet.add(expDir);
+      return atributosRet;
+    }else{
+      error("Error semántico tipos incompatibles");
+    }
+    return null;
   }
   
   //exp_p → + term exp_p | - term exp_p | ε
-  private void exp_p() throws IOException,Exception{
+  private ArrayList<String> exp_p() throws IOException,Exception{
+    ArrayList<String> atributosRet = new ArrayList<String>();
+    String exp_pOp;
     if(tokenActual==SUMA){
       eat(SUMA);
-      term();
-      exp_p();
+      exp_pOp = "+";
+      
     }else if(tokenActual==RESTA){
       eat(RESTA);
-      term();
-      exp_p();
+      exp_pOp = "-";
+
+    }else{
+      atributosRet.add("-1");
+      atributosRet.add("");
+      return atributosRet;
     }
+
+    ArrayList<String> termAtributos = term();
+    ArrayList<String> exp_pAtributos = exp_p();
+    
+    int termTipo = Integer.parseInt(termAtributos.get(0));
+    String termDir = termAtributos.get(1);
+    int exp_pTipo = Integer.parseInt(exp_pAtributos.get(0));
+    String exp_pDir = exp_pAtributos.get(1);
+
+    if(Semantico.equivalentes(exp_pTipo, termTipo)){
+      int expTipo;
+      String expDir, d1, d2;
+
+      if(exp_pTipo != -1){
+        expTipo = Semantico.maximo(exp_pTipo, termTipo);
+        expDir = Semantico.nuevaTemporal();
+        d1 = Semantico.ampliar(exp_pDir, exp_pTipo, expTipo,codigo);
+        d2 = Semantico.ampliar(termDir, termTipo, expTipo,codigo);
+        codigo.genCod(new Cuadrupla(exp_pOp, d1, d2, expDir));
+      }else{
+        expTipo = termTipo;
+        expDir = termDir;
+      }
+      atributosRet.add(Integer.toString(expTipo));
+      atributosRet.add(expDir);
+
+      return atributosRet;
+
+    }else{
+      error("Error semántico tipos incompatibles");
+    }
+    return null;
   }
   
   /*
     LAZARO *************************************************
 
   */
-  private void term() throws IOException,Exception{
-    unario();
-    term_p();
+  //
+  private ArrayList<String> term() throws IOException,Exception{
+    ArrayList<String> unarAtributos = unario();
+    ArrayList<String> term_pAtributos = term_p();
+    ArrayList<String> atributosRet = new ArrayList<String>();
+    int term_pTipo = Integer.parseInt(term_pAtributos.get(0));
+    String term_pDir = term_pAtributos.get(1);
+    String term_pOp = term_pAtributos.get(2);
+    int unarTipo = Integer.parseInt(unarAtributos.get(0));
+    String unarDir = unarAtributos.get(1);
+    if(Semantico.equivalentes(term_pTipo, unarTipo)){
+      int termTipo;
+      String termDir, d1, d2;
+      if (term_pTipo != -1){
+        if(term_pOp != "%"){
+          termTipo = Semantico.maximo(term_pTipo, unarTipo);
+          termDir = Semantico.nuevaTemporal();
+          d1 = Semantico.ampliar(term_pDir, term_pTipo, termTipo,codigo);
+          d2 = Semantico.ampliar(unarDir, unarTipo, termTipo,codigo);
+          codigo.genCod(new Cuadrupla(term_pOp, d1,d2, termDir));
+        } else{
+          termTipo = 0; //int
+          termDir = Semantico.nuevaTemporal();
+          codigo.genCod(new Cuadrupla("%",unarDir, term_pDir, termDir));
+        }
+      }else{
+        termDir = unarDir;
+        termTipo = unarTipo;
+      }
+      //AÑADIR ATRIBUTOS A RETORNAR
+      atributosRet.add(Integer.toString(termTipo));
+      atributosRet.add(termDir);
+      return atributosRet;
+    }else{
+      error("Error: tipos incompatibles");
+    }
+    return null;
   }
 
-  private void term_p() throws IOException,Exception{
+  private ArrayList<String> term_p() throws IOException,Exception{
+    String term_pOp;
+    ArrayList<String> atributosRet = new ArrayList<String>();
+
     switch(tokenActual){
       case MULTI:
         eat(MULTI);
-        unario();
-        term_p();
+        term_pOp = "*";
         break;
       case DIVISION:
         eat(DIVISION);
-        unario();
-        term_p();
+        term_pOp = "/";
         break;
       case MODULO:
         eat(MODULO);
-        unario();
-        term_p();
+        term_pOp = "%";
         break;
       default:
-        // aquí entra en producción vacía
-        break;
+        atributosRet.add("-1");
+        atributosRet.add("");
+        return atributosRet;
     }
+
+    ArrayList<String> unarAtributos = unario();
+    ArrayList<String> term_pAtributos = term_p();
+
+    int term_pTipo = Integer.parseInt(term_pAtributos.get(0));
+    String term_pDir = term_pAtributos.get(1);
+    int unarTipo = Integer.parseInt(unarAtributos.get(0));
+    String unarDir = unarAtributos.get(1);
+
+    if(Semantico.equivalentes(term_pTipo, unarTipo)){
+      int termTipo;
+      String termDir, d1, d2;
+
+      if (term_pTipo != -1){
+        if(term_pOp != "%"){
+          termTipo = Semantico.maximo(term_pTipo, unarTipo);
+          termDir = Semantico.nuevaTemporal();
+          d1 = Semantico.ampliar(term_pDir, term_pTipo, termTipo,codigo);
+          d2 = Semantico.ampliar(unarDir, unarTipo, termTipo,codigo);
+          codigo.genCod(new Cuadrupla(term_pOp, d1,d2, termDir));
+        }else{
+          termTipo = 0; //int
+          termDir = Semantico.nuevaTemporal();
+          codigo.genCod(new Cuadrupla("%",unarDir, term_pDir, termDir));
+        }
+      }else{
+        termDir = unarDir;
+        termTipo = unarTipo;
+      }
+
+      atributosRet.add(Integer.toString(termTipo));
+      atributosRet.add(termDir);
+      return atributosRet;
+    }else{
+      System.out.println("Error semántico tipos incompatibles");
+    }
+    return null;
   }
 
-  private void unario() throws IOException,Exception{
+  private ArrayList<String> unario() throws IOException,Exception{
     switch(tokenActual){
       case NEGACION:
         eat(NEGACION);
@@ -636,6 +853,7 @@ public class Parser{
       default:
         factor();
     }
+    return null;
   }
 
   private void factor() throws IOException,Exception{
@@ -643,7 +861,7 @@ public class Parser{
       //(bool)
       case P1:
         eat(P1);
-        bool();
+        bool("","");
         eat(P2);
         break;
       //localización
@@ -694,32 +912,33 @@ public class Parser{
   }
 
   private void lista_param() throws IOException,Exception{
-    bool();
+    bool("","");
     lista_param_p();
   }
 
   private void lista_param_p() throws IOException,Exception{
     if(tokenActual==COMA){
       eat(COMA);
-      bool();
+      bool("","");
       lista_param_p();
     }
     // producción vacía
   }
 
-  private void localizacion() throws IOException,Exception{
+  private ArrayList<String> localizacion() throws IOException,Exception{
     if(tokenActual==IDENTIFIER){
       eat(IDENTIFIER);
       localizacion_p();
     }else{
       error("Error de sintaxis, se esperaba un identificador 1");
     }
+    return null;
   }
 
   private void localizacion_p() throws IOException,Exception{
     if(tokenActual==C1){
       eat(C1);
-      bool();
+      bool("","");
       eat(C2);
       localizacion_p();
     }
