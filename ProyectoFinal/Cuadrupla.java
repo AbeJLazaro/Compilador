@@ -4,6 +4,7 @@ public class Cuadrupla{
   public String arg1;
   public String arg2;
   public String res;
+  public int tipo;
 
   // Constructor
   public Cuadrupla(String op, String arg1, String arg2, String res){
@@ -11,6 +12,7 @@ public class Cuadrupla{
     this.arg1 = arg1;
     this.arg2 = arg2;
     this.res = res;
+    this.tipo = 0;
   }
 
   public Cuadrupla(int tipo, String codigo){
@@ -20,16 +22,28 @@ public class Cuadrupla{
         arg1 = "";
         arg2 = "";
         res = "";
+        this.tipo = 1;
+        break;
       case 2:
-        op = "goto";
-        arg1 = codigo;
+        op = codigo;
+        arg1 = "";
         arg2 = "";
         res = "";
+        this.tipo = 2;
+        break;
     }
   }
   
   public String toString(){
-    return res+" "+arg1+" "+op+" "+arg2;
+    switch(this.tipo){
+      case 0:
+        return res+"="+arg1+" "+op+" "+arg2;
+      case 1:
+        return op;
+      case 2:
+        return op; 
+      default:
+        return res+" "+arg1+" "+op+" "+arg2;
+    }
   }
-  
 }

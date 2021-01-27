@@ -16,19 +16,24 @@ public class CodigoIntermedio{
 
   public void genCod(String tipo, String cadena){
     if(tipo.equals("label")){
-      codigo.add(new Cuadrupla(1,cadena));
+      codigo.add(new Cuadrupla(1,cadena+":"));
     }
   }
 
   public void genCod(String cadena){
-    codigo.add(new Cuadrupla(1,cadena));
+    codigo.add(new Cuadrupla(2,cadena));
   }
 
   // get para mostrar el código generado
   public String getCodigo(){
     String texto="";
     for (Cuadrupla cuad : codigo) {
-      texto+=cuad.toString()+"\n";
+      texto+=cuad.toString();
+      if(cuad.tipo!=1){
+        texto+="\n";
+      }else{
+        texto+=" ";
+      }
     }
     return texto;
   }
