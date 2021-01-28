@@ -13,6 +13,7 @@ public class Cuadrupla{
     this.arg2 = arg2;
     this.res = res;
     this.tipo = 0;
+    System.out.println(toString());
   }
 
   public Cuadrupla(int tipo, String codigo){
@@ -32,18 +33,19 @@ public class Cuadrupla{
         this.tipo = 2;
         break;
     }
+    System.out.println(toString());
   }
   
   public String toString(){
     switch(this.tipo){
       case 0:
-        return res+"="+arg1+" "+op+" "+arg2;
+        return res+"="+arg1+op+arg2;
       case 1:
         return op;
       case 2:
         return op; 
       default:
-        return res+" "+arg1+" "+op+" "+arg2;
+        return res+arg1+op+arg2;
     }
   }
 }

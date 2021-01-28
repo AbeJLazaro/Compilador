@@ -11,20 +11,19 @@ func int A(int a, float b, char c, double d, int[10] e){
   char d1;
   int[10][5] e1;
 
-  e1[1] = a+b;
-  if((e1[1] == 14) && (a%2==0)){
+  e1[1][1] = a+b;
+  if((e1[1][1] == 14) && (a%2==0)){
     while(a>1)
       a=a-1;
     a=b*10;  
   }else
-    c=a-b;
+    a1=a-b;
 
   do{
     if(a%10==0){
       while(a<5){
         a=a+1;
         b=a*10;
-        c=20*c;
       }
     }
   }while(a<10)

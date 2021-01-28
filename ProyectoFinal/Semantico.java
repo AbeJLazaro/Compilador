@@ -35,16 +35,29 @@ public class Semantico{
     return true;
   }
 
+  // indica si dos listas de enteros son iguales
+  public static boolean equivalentesListas(ArrayList<Integer> lista1, ArrayList<Integer> lista2){
+    int t1 = lista1.size();
+    int t2 = lista2.size();
+    if(t1!=t1) return false;
+    for (int i=0;i<t1;i++) {
+      if(!equivalentes(lista1.get(i),lista2.get(i))){
+        return false;
+      }
+    }
+    return true;
+  }
+
   // Método para ampliar un tipo de dato 
   public static String ampliar(String d, int menor, int mayor, CodigoIntermedio cod){
     if(menor == mayor) return d;
     String temp;
     if(menor==0 && mayor==1){
       temp = nuevaTemporal();
-      cod.genCod(new Cuadrupla("=","(float)"+d,"",temp)); // temp = (float)d
+      cod.genCod(temp+"=(float)"+d); // temp = (float)d
       return temp;
     }
-    return null;
+    return d;
   }
 
   //método que encuentra el tipo de dato más grande
@@ -62,10 +75,10 @@ public class Semantico{
     String temp;
     if(menor==0 && mayor==1){
       temp = nuevaTemporal();
-      cod.genCod(new Cuadrupla("=","(int)"+d,"",temp)); // temp = (int)d
+      cod.genCod(temp+"=(int)"+d); // temp = (int)d
       return temp;
     }
-    return null;
+    return d;
   }
 
   public static ArrayList<Integer> invertir(ArrayList<Integer> lista){

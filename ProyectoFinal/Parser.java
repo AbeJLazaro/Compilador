@@ -33,6 +33,8 @@ public class Parser{
   private static final int CASE=13;
   private static final int DEFAULT=14;
   private static final int RETURN=45;
+  private static final int PRINT=46;
+  private static final int SCAN=47;
   //OPERADORES
   private static final int ASIGNACION=15;
   private static final int OR=16;
@@ -80,6 +82,7 @@ public class Parser{
   // pilas
   private Stack<TablaSimbolos> PilaTS;
   private Stack<TablaTipos> PilaTT;
+  private TablaCadenas tablaCadenas;
 
   private Stack<Integer> PilaDir;
 
@@ -102,6 +105,7 @@ public class Parser{
     PilaTS = new Stack<TablaSimbolos>();
     PilaTT = new Stack<TablaTipos>();
     PilaDir = new Stack<Integer>();
+    tablaCadenas = new TablaCadenas();
 
     PilaTS.push(fondoTS);
     PilaTT.push(fondoTT);
@@ -253,7 +257,6 @@ public class Parser{
         String bloqueSig = Semantico.nuevaEtiqueta();
 
         codigo.genCod("label",id);
-        codigo.genCod("label",bloqueSig);
 
         // bloque
         bloque(bloqueSig);
@@ -385,7 +388,7 @@ public class Parser{
 
   private void sentencia(String sentenciaSig) throws IOException,ErrorCompilador{
     String boolVddr,boolFls,sentencia1Sig;
-    ArrayList<String> boolAtributos,localizacionAtributos;
+    ArrayList<String> boolAtributos,parte_izquierdaAtributos,expAtributos;
 
     switch(tokenActual){
       case IF:
@@ -409,21 +412,20 @@ public class Parser{
         break;
       case IDENTIFIER:
         // este va a cambiar su nombre, revisarlo
-        localizacionAtributos = localizacion();
+        parte_izquierdaAtributos = parte_izquierda();
         eat(ASIGNACION);
 
         boolAtributos = bool(Semantico.nuevaEtiqueta(),Semantico.nuevaEtiqueta());
         eat(PUNTOYCOMA);
 
-        int localizacionTipo = Integer.parseInt(localizacionAtributos.get(0));
-        String localizacionDir = localizacionAtributos.get(1);
+        int parte_izquierdaTipo = Integer.parseInt(parte_izquierdaAtributos.get(0));
+        String parte_izquierdaDir = parte_izquierdaAtributos.get(1);
 
         int boolTipo = Integer.parseInt(boolAtributos.get(0));
         String boolDir = boolAtributos.get(1);
-
-        if(Semantico.equivalentes(localizacionTipo,boolTipo)){
-          String d1 = Semantico.reducir(boolDir, boolTipo, localizacionTipo, codigo);
-          codigo.genCod(new Cuadrupla("", d1, "", localizacionDir));
+        if(Semantico.equivalentes(parte_izquierdaTipo,boolTipo)){
+          String d1 = Semantico.reducir(boolDir, boolTipo, parte_izquierdaTipo, codigo);
+          codigo.genCod(parte_izquierdaDir+"="+d1);
         }else{
           error("Error semántico, tipos incompatibles");
         }
@@ -493,6 +495,16 @@ public class Parser{
         int returnTipo = return_p();
         listaRetorno.add(returnTipo);
         break;
+      case PRINT:
+        eat(PRINT);
+        expAtributos = exp("","");
+        codigo.genCod("print "+expAtributos.get(1));
+        eat(PUNTOYCOMA);
+      case SCAN:
+        eat(SCAN);
+        parte_izquierdaAtributos = parte_izquierda();
+        codigo.genCod("print "+parte_izquierdaAtributos.get(1));
+        eat(PUNTOYCOMA);
       //default:
         // producción vacía
     }
@@ -567,6 +579,51 @@ public class Parser{
     return predeterminadoPrueba;
   }
 
+  private ArrayList<String> parte_izquierda() throws IOException,ErrorCompilador{
+    String parte_izquierda_pBase = lexema;
+    eat(IDENTIFIER);
+    ArrayList<String> parte_izquierda_pAtributos = parte_izquierda_p(parte_izquierda_pBase);
+
+    int parte_izquierda_pTipo = Integer.parseInt(parte_izquierda_pAtributos.get(0));
+    String parte_izquierda_pDir = parte_izquierda_pAtributos.get(1);
+
+    ArrayList<String> parte_izquierdaAtributos = new ArrayList<String>();
+    parte_izquierdaAtributos.add(Integer.toString(parte_izquierda_pTipo));
+    parte_izquierdaAtributos.add(parte_izquierda_pDir);
+    return parte_izquierdaAtributos;
+  } 
+
+  private ArrayList<String> parte_izquierda_p(String parte_izquierda_pBase) throws IOException,ErrorCompilador{
+    ArrayList<String> parte_izquierda_pAtributos = new ArrayList<String>();
+
+    if(tokenActual == C1){
+      String localizacionBase = parte_izquierda_pBase;
+      ArrayList<String> localizacionAtributos = localizacion(localizacionBase);
+
+      int localizacionTipo = Integer.parseInt(localizacionAtributos.get(0));
+      String localizacionDir = localizacionAtributos.get(1);
+
+      parte_izquierda_pAtributos.add(Integer.toString(localizacionTipo));
+      parte_izquierda_pAtributos.add(localizacionDir);
+      return parte_izquierda_pAtributos;
+
+    }else{
+
+      if(PilaTS.peek().buscar(parte_izquierda_pBase)){
+        parte_izquierda_pAtributos.add(Integer.toString(PilaTS.peek().getTipo(parte_izquierda_pBase)));
+        parte_izquierda_pAtributos.add(parte_izquierda_pBase);
+        return parte_izquierda_pAtributos;
+      }else if(fondoTS.buscar(parte_izquierda_pBase)){
+        parte_izquierda_pAtributos.add(Integer.toString(fondoTS.getTipo(parte_izquierda_pBase)));
+        parte_izquierda_pAtributos.add(parte_izquierda_pBase);
+        return parte_izquierda_pAtributos;
+      }else{
+        error("Error semántico, el id "+parte_izquierda_pBase+" no esta declarado");
+      }
+      return null;
+    } 
+  }
+
   /*
     ANGEL *************************************************
   bool → comb bool_p
@@ -610,7 +667,6 @@ public class Parser{
       }
       atributosRet.add(Integer.toString(boolTipo));
       atributosRet.add(boolDir);
-
       return atributosRet;
     }else{
       error("Error semántico, tipos incompatibles");
@@ -700,7 +756,6 @@ public class Parser{
       }
       atributosRet.add(Integer.toString(combTipo));
       atributosRet.add(combDir);
-
       return atributosRet;
     }else{
       error("Error semántico, tipos incompatibles");
@@ -783,11 +838,12 @@ public class Parser{
 
     if(Semantico.equivalentes(igualdad_pTipo,relTipo)){
       if(igualdad_pTipo!=-1){
+        igualdadDir = Semantico.nuevaTemporal();
         tipoTemp = Semantico.maximo(igualdad_pTipo, relTipo); 
         d1 = Semantico.ampliar(igualdad_pDir, igualdad_pTipo, tipoTemp,codigo);
         d2 = Semantico.ampliar(relDir, relTipo, tipoTemp,codigo);
         codigo.genCod(new Cuadrupla(igualdad_pOp,d1,d2,igualdadDir));
-        codigo.genCod("if"+igualdadDir+" goto "+relVddr); 
+        codigo.genCod("if "+igualdadDir+" goto "+relVddr); 
         codigo.genCod("goto "+relFls);
       }else{
         igualdadTipo=relTipo;
@@ -795,8 +851,7 @@ public class Parser{
       }
       atributosRet.add(Integer.toString(igualdadTipo));
       atributosRet.add(igualdadDir);
-
-      return atributosRet;
+      return atributosRet ;
     }else{
       error("Error semántico, tipos incompatibles");
     }
@@ -851,12 +906,11 @@ public class Parser{
         d1 = Semantico.ampliar(igualdad_p1Dir, igualdad_p1Tipo, tipoTemp, codigo);
         d2 = Semantico.ampliar(relDir, relTipo, tipoTemp, codigo);
         codigo.genCod(new Cuadrupla(igualdad_p1Op,d1,d2,igualdad_pDir));
-        codigo.genCod("if"+igualdad_pDir+" goto "+relVddr); 
+        codigo.genCod("if "+igualdad_pDir+" goto "+relVddr); 
         codigo.genCod("goto "+relFls);
       }else{
         igualdad_pTipo=relTipo;
         igualdad_pDir=relDir;
-        igualdad_pOp="";
       }
       atributosRet.add(Integer.toString(igualdad_pTipo));
       atributosRet.add(igualdad_pDir);
@@ -992,11 +1046,9 @@ public class Parser{
     if(tokenActual==SUMA){
       eat(SUMA);
       exp_pOp = "+";
-      
     }else if(tokenActual==RESTA){
       eat(RESTA);
       exp_pOp = "-";
-
     }else{
       atributosRet.add("-1");
       atributosRet.add("");
@@ -1027,7 +1079,6 @@ public class Parser{
       }else{
         exp_pTipo = termTipo;
         exp_pDir = termDir;
-        exp_pOp = "";
       }
       atributosRet.add(Integer.toString(exp_pTipo));
       atributosRet.add(exp_pDir);
@@ -1080,7 +1131,7 @@ public class Parser{
       atributosRet.add(termDir);
       return atributosRet;
     }else{
-      error("Error: tipos incompatibles");
+      error("Error semántico, tipos incompatibles");
     }
     return null;
   }
@@ -1138,7 +1189,6 @@ public class Parser{
       }else{
         term_pDir = unarioDir;
         term_pTipo = unarioTipo;
-        term_pOp = "";
       }
 
       atributosRet.add(Integer.toString(term_pTipo));
@@ -1199,63 +1249,131 @@ public class Parser{
   }
 
   private ArrayList<String> factor() throws IOException,ErrorCompilador{
+    ArrayList<String> atributosRet = new ArrayList<String>();
     switch(tokenActual){
       //(bool)
       case P1:
         eat(P1);
-        bool("","");
+        atributosRet=bool("","");
         eat(P2);
-        break;
-      //localización
-      //id(parametros)
-      case IDENTIFIER:
-        eat(IDENTIFIER);
-        factor_p();
-        break;
+        return atributosRet;
       // número
       case INT_LIT:
+        atributosRet.add("0");
+        atributosRet.add(lexema);
         eat(INT_LIT);
-        break;
+        return atributosRet;
       case FLOAT_LIT:
+        atributosRet.add("1");
+        atributosRet.add(lexema);
         eat(FLOAT_LIT);
-        break;
+        return atributosRet;
       // cadena
       case STRING_LIT:
-        eat(STRING_LIT);
-        break;
+        tablaCadenas.agregar(lexema);
+        eat(STRING_LIT); 
+        atributosRet.add("5");
+        atributosRet.add("SP"+Integer.toString(tablaCadenas.getUltimaPos()));
+        return atributosRet;
       //true
       case TRUE:
         eat(TRUE);
-        break;
+        atributosRet.add("0");
+        atributosRet.add("true");
+        return atributosRet;
       //false
       case FALSE:
         eat(FALSE);
-        break;
+        atributosRet.add("0");
+        atributosRet.add("false");
+        return atributosRet;
+      // id
+      case IDENTIFIER:
+        String factor_pBase = lexema;
+        eat(IDENTIFIER);
+        atributosRet = factor_p(factor_pBase);
+        return atributosRet;
       default:
         error("Error de sintaxis");
+        return null;
     }
-    ArrayList<String> a = new ArrayList<String>();
-    a.add("0");
-    a.add("dir");
-    return a;
   }
 
-  private void factor_p() throws IOException,ErrorCompilador{
-    if(tokenActual==P1){
-      eat(P1);
-      parametros();
-      eat(P2);
-    }else{
-      localizacion_p();
+  private ArrayList<String> factor_p(String factor_pBase) throws IOException,ErrorCompilador{
+    ArrayList<String> atributosRet = new ArrayList<String>();
+    int factor_pTipo;
+    String factor_pDir;
+    switch(tokenActual){
+      case C1:
+        String localizacionBase = factor_pBase;
+        ArrayList<String> localizacionAtributos = localizacion(localizacionBase);
+
+        int localizacionTipo = Integer.parseInt(localizacionAtributos.get(0));
+        String localizacionDir = localizacionAtributos.get(1);
+
+        factor_pTipo = localizacionTipo;
+        factor_pDir = Semantico.nuevaTemporal();
+
+        atributosRet.add(Integer.toString(factor_pTipo));
+        atributosRet.add(factor_pDir);
+
+        codigo.genCod(factor_pDir+" = "+ factor_pBase + " [" + localizacionDir + "]");
+        return atributosRet;
+
+      case P1:
+        eat(P1);
+        ArrayList<Integer> parametrosLista = parametros();
+        eat(P1);
+
+        if(fondoTS.buscar(factor_pBase)){
+          if(fondoTS.getVar(factor_pBase).equals("func")){
+            if(Semantico.equivalentesListas(parametrosLista,fondoTS.getArgs(factor_pBase))){
+              factor_pTipo = PilaTS.peek().getTipo(factor_pBase);
+              factor_pDir = Semantico.nuevaTemporal();
+              codigo.genCod(factor_pDir+" = call "+ factor_pBase + ","+Integer.toString(parametrosLista.size()));
+              atributosRet.add(Integer.toString(factor_pTipo));
+              atributosRet.add(factor_pDir);
+              return atributosRet;
+            }else{
+              error("Error semántico, el número o tipo de parámetros no coincide");
+            }
+          }else{
+            error("Error semántico, el id no es una función");
+          }
+        }else{
+          error("Error semántico, el id no se encuentra declarado");
+        }
+        return null;
+
+      default:
+        factor_pDir = factor_pBase;
+        if(PilaTS.peek().buscar(factor_pDir)){
+          factor_pTipo = PilaTS.peek().getTipo(factor_pDir);
+        }else{
+          factor_pTipo = fondoTS.getTipo(factor_pDir);
+        }
+        atributosRet.add(Integer.toString(factor_pTipo));
+        atributosRet.add(factor_pDir);
+        return atributosRet;
     }
   }
 
   private ArrayList<Integer> parametros() throws IOException,ErrorCompilador{
-    if(tokenActual==OR){//***************************************************** ponerle el first de lista_param()
-      ArrayList<Integer> parametrosLista = lista_param();
-      return parametrosLista;
-    }
-    return new ArrayList<Integer>();
+    switch(tokenActual){
+      case NEGACION:
+      case RESTA:
+      case IDENTIFIER:
+      case P1:
+      case INT_LIT:
+      case FLOAT_LIT:
+      case STRING_LIT:
+      case TRUE:
+      case FALSE:
+        ArrayList<Integer> parametrosLista = lista_param();
+        return parametrosLista;
+      default:
+        return new ArrayList<Integer>();
+    } 
   }
 
   private ArrayList<Integer> lista_param() throws IOException,ErrorCompilador{
@@ -1280,27 +1398,139 @@ public class Parser{
     return lista_param;
   }
 
-  private ArrayList<String> localizacion() throws IOException,ErrorCompilador{
-    if(tokenActual==IDENTIFIER){
-      eat(IDENTIFIER);
-      localizacion_p();
+  private ArrayList<String> localizacion(String localizacionBase) throws IOException,ErrorCompilador{
+    if(tokenActual==C1){
+      eat(C1);
+
+      ArrayList<String> boolAtributos = bool("","");
+      int boolTipo = Integer.parseInt(boolAtributos.get(0));
+      String boolDir = boolAtributos.get(1);
+
+      eat(C2);
+
+      int tipoTemp, localizacion_pTipo, localizacion_pTipoS, localizacion_pTam;
+      String localizacion_pDir, localizacion_pDirS;
+      ArrayList<String> localizacion_pAtributos;
+
+      if(PilaTS.peek().buscar(localizacionBase)){
+
+        tipoTemp = PilaTS.peek().getTipo(localizacionBase);
+        localizacion_pTipo = PilaTT.peek().getTipoBase(tipoTemp);
+        localizacion_pDir = Semantico.nuevaTemporal();
+        localizacion_pTam = PilaTT.peek().getTam(localizacion_pTipo);
+
+        localizacion_pAtributos = localizacion_p(localizacion_pTipo, localizacion_pDir);
+        localizacion_pTipoS = Integer.parseInt(localizacion_pAtributos.get(0));
+        localizacion_pDirS = localizacion_pAtributos.get(1); 
+
+        if(boolTipo == 0){
+          if(PilaTT.peek().getNombre(tipoTemp).equals("array")){
+
+            String localizacionDir = localizacion_pDirS;
+            int localizacionTipo = localizacion_pTipoS;
+
+            codigo.genCod(localizacionDir +" = "+ boolDir +"*"+ localizacion_pTam);
+
+            ArrayList<String> atributosRet = new ArrayList<String>();
+            atributosRet.add(Integer.toString(localizacionTipo));
+            atributosRet.add(localizacionDir);
+            return atributosRet;
+
+          }else{
+            error("Error semántico, el id no es un arreglo");
+          }
+        }else{
+          error("Error semántico, el indice de un arreglo debe ser entero");
+        }
+      }else if(fondoTS.buscar(localizacionBase)){
+
+        tipoTemp = fondoTS.getTipo(localizacionBase);
+        localizacion_pTipo = fondoTT.getTipoBase(tipoTemp);
+        localizacion_pDir = Semantico.nuevaTemporal();
+        localizacion_pTam = fondoTT.getTam(localizacion_pTipo);
+
+        localizacion_pAtributos = localizacion_p(localizacion_pTipo, localizacion_pDir);
+        localizacion_pTipoS = Integer.parseInt(localizacion_pAtributos.get(0));
+        localizacion_pDirS = localizacion_pAtributos.get(1); 
+
+        if(boolTipo == 0){
+          if(fondoTT.getNombre(tipoTemp).equals("array")){
+
+            String localizacionDir = localizacion_pDirS;
+            int localizacionTipo = localizacion_pTipoS;
+
+            codigo.genCod(localizacionDir +" = "+ boolDir +"*"+ localizacion_pTam);
+
+            ArrayList<String> atributosRet = new ArrayList<String>();
+            atributosRet.add(Integer.toString(localizacionTipo));
+            atributosRet.add(localizacionDir);
+            return atributosRet;
+
+          }else{
+            error("Error semántico, el id no es un arreglo");
+          }
+        }else{
+          error("Error semántico, el indice de un arreglo debe ser entero");
+        }
+      }else{
+        error("Error semántico, el id "+localizacionBase+" no esta declarado");
+      }
     }else{
       error("Error de sintaxis, se esperaba un identificador 1");
     }
-    ArrayList<String> a = new ArrayList<String>();
-    a.add("0");
-    a.add("dir");
-    return a;
+    return null;
   }
 
-  private void localizacion_p() throws IOException,ErrorCompilador{
+  private ArrayList<String> localizacion_p(int localizacion_pTipo, String localizacion_pDir) throws IOException,ErrorCompilador{
     if(tokenActual==C1){
       eat(C1);
-      bool("","");
+
+      ArrayList<String> boolAtributos = bool(Semantico.nuevaTemporal(),Semantico.nuevaTemporal());
+      int boolTipo = Integer.parseInt(boolAtributos.get(0));
+      String boolDir = boolAtributos.get(1);
+
       eat(C2);
-      localizacion_p();
-    }
+
+      int localizacion_p1Tipo = PilaTT.peek().getTipoBase(localizacion_pTipo);
+      String localizacion_p1Dir = Semantico.nuevaTemporal();
+      int localizacion_p1Tam = PilaTT.peek().getTam(localizacion_p1Tipo); 
+
+      String dirTemp = Semantico.nuevaTemporal();
+
+      ArrayList<String> localizacion_p1Atributos = localizacion_p(localizacion_p1Tipo, localizacion_p1Dir);
+      int localizacion_p1TipoS = Integer.parseInt(localizacion_p1Atributos.get(0));
+      String localizacion_p1DirS = localizacion_p1Atributos.get(1);
+
+      if(boolTipo == 0){
+        if(PilaTT.peek().getNombre(localizacion_pTipo).equals("array")){
+
+          localizacion_pDir = localizacion_p1DirS;
+          localizacion_pTipo = localizacion_p1TipoS;
+
+          codigo.genCod(dirTemp+" = "+boolDir+"*"+localizacion_p1Tam);                
+          codigo.genCod(localizacion_p1Dir+" = "+localizacion_pDir+"+"+dirTemp);
+
+          ArrayList<String> atributosRet = new ArrayList<String>();
+          atributosRet.add(Integer.toString(localizacion_pTipo));
+          atributosRet.add(localizacion_pDir);
+          return atributosRet;
+
+        }else{
+          error("Error semántico, el id no es un arreglo");
+        }
+      }else{
+        error("Error semántico, el indice de un arreglo debe ser entero");
+      }return null;
     // producción vacía
+    }else{
+      String localizacion_pDirS=localizacion_pDir;
+      int localizacion_pTipoS=localizacion_pTipo;
+
+      ArrayList<String> atributosRet = new ArrayList<String>();
+      atributosRet.add(Integer.toString(localizacion_pTipoS));
+      atributosRet.add(localizacion_pDirS);
+      return atributosRet;
+    }
   }
   // MÉTODOS DE AYUDA
 

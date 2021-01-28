@@ -22,6 +22,7 @@ public class TablaTipos{
     tabla.add(new Tipo(2, "char", 1, -1, -1));
     tabla.add(new Tipo(3, "double", 8, -1, -1));
     tabla.add(new Tipo(4, "void", 0, -1, -1));
+    tabla.add(new Tipo(5, "string", 10, -1, -1));
   }
 
   // Método para obtener el tamaño de un tipo de dato

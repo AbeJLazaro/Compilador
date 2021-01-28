@@ -5,7 +5,7 @@ Autores:      Cabrera Gaytán Jazmín Andrea
               Lázaro Martínez Abraham Josué
               Oropeza Castañeda Ángel Eduardo
 
-Versión:      1.1
+Versión:      1.2
 Fecha:        18 de enero de 2021
 Nombre:       lexer.jflex
 */
@@ -41,6 +41,8 @@ private static final int SWITCH=12;
 private static final int CASE=13;
 private static final int DEFAULT=14;
 private static final int RETURN=45;
+private static final int PRINT=46;
+private static final int SCAN=47;
 //OPERADORES
 private static final int ASIGNACION=15;
 private static final int OR=16;
@@ -113,6 +115,8 @@ SWITCH=switch
 CASE=case
 DEFAULT=default
 RETURN=return
+PRINT=print
+SCAN=scan
 
 //OPERADORES
 ASIGNACION="="
@@ -185,6 +189,8 @@ enter=[\n]
 {CASE} {anexar();return CASE;}
 {DEFAULT} {anexar();return DEFAULT;}
 {RETURN} {anexar();return RETURN;}
+{PRINT} {anexar();return PRINT;}
+{SCAN} {anexar();return SCAN;}
 
 {TRUE} {anexar();return TRUE;}
 {FALSE} {anexar();return TRUE;}

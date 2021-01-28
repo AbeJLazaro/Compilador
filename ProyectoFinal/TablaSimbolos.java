@@ -43,6 +43,16 @@ public class TablaSimbolos{
     return -1;
   }
 
+  // obtener el tipo de un simbolo
+  public String getVar(String id){
+    for (Simbolo s : tabla ) {
+      if(s.id.equals(id)){
+        return s.var;
+      }
+    }
+    return "";
+  }
+
   // obtener los argumento
   public ArrayList<Integer> getArgs(String id){
     for (Simbolo s : tabla ) {
