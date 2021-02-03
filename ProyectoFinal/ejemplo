@@ -10,23 +10,14 @@ func int A(int a, float b, char c, double d, int[10] e){
   double c1;
   char d1;
   int[10][5] e1;
+  int[10] e2;
 
   e1[1][1] = a+b;
+  e2[1] = a+b;
   if((e1[1][1] == 14) && (a%2==0)){
-    while(a>1)
-      a=a-1;
     a=b*10;  
   }else
     a1=a-b;
-
-  do{
-    if(a%10==0){
-      while(a<5){
-        a=a+1;
-        b=a*10;
-      }
-    }
-  }while(a<10)
 
   return a1;
 }

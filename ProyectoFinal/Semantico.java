@@ -4,6 +4,7 @@ public class Semantico{
 
   public static int numTemporal=0;
   public static int numEtiqueta=0;
+  public static int numIndice=0;
 
   // método para generar una nueva temporal
   public static String nuevaTemporal(){
@@ -54,7 +55,7 @@ public class Semantico{
     String temp;
     if(menor==0 && mayor==1){
       temp = nuevaTemporal();
-      cod.genCod(temp+"=(float)"+d); // temp = (float)d
+      cod.genCod(new Cuadrupla("(float)","",d,temp)); // temp = (float)d
       return temp;
     }
     return d;
@@ -75,17 +76,50 @@ public class Semantico{
     String temp;
     if(menor==0 && mayor==1){
       temp = nuevaTemporal();
-      cod.genCod(temp+"=(int)"+d); // temp = (int)d
+      cod.genCod(new Cuadrupla("(int)","",d,temp)); // temp = (int)d
       return temp;
     }
     return d;
   }
 
+  // método para invertir un arraylist
   public static ArrayList<Integer> invertir(ArrayList<Integer> lista){
     ArrayList<Integer> retorno = new ArrayList<Integer>();
     for(int i=lista.size()-1;i>=0;i--){
       retorno.add(lista.get(i));
     }
     return retorno;
+  }
+
+  // método para generar indices
+  public static String nuevoIndice(){
+    return "i"+numIndice++;
+  }
+
+  // método para se genera una lista para almacenar los indices
+  public static ArrayList<String> nuevaListaIndices(){
+    return new ArrayList<String>();
+  }
+
+  // método para reemplazar los indices
+  public static void reemplazarIndices(ArrayList<String> lista, String etiqueta, CodigoIntermedio codigo){
+
+    ArrayList<Cuadrupla> listaCuadruplas = codigo.getCodigoCuadruplas();
+    for (String etq:lista){
+      if(etq.equals(lista.get(lista.size()-1))){
+        for (Cuadrupla c:listaCuadruplas) {
+          if(c.res.equals(etq)){
+            c.res=etiqueta;
+          }
+        }
+      }else{
+        String etq_p = Semantico.nuevaEtiqueta();
+        for (Cuadrupla c:listaCuadruplas) {
+          if(c.res.equals(etq)){
+            c.res=etq_p;
+          }
+        }
+      }
+    }
   }
 }

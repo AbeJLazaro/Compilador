@@ -16,36 +16,40 @@ public class Cuadrupla{
     System.out.println(toString());
   }
 
-  public Cuadrupla(int tipo, String codigo){
-    switch(tipo){
-      case 1:
-        op = codigo;
-        arg1 = "";
-        arg2 = "";
-        res = "";
-        this.tipo = 1;
-        break;
-      case 2:
-        op = codigo;
-        arg1 = "";
-        arg2 = "";
-        res = "";
-        this.tipo = 2;
-        break;
-    }
+  public Cuadrupla(String op, String res){
+    this.op = op;
+    this.arg1 = "";
+    this.arg2 = "";
+    this.res = res;
+    this.tipo = 1;
+    System.out.println(toString());
+  }
+
+  public Cuadrupla(String op){
+    this.op = op;
+    this.arg1 = "";
+    this.arg2 = "";
+    this.res = "";
+    this.tipo = 2;
     System.out.println(toString());
   }
   
   public String toString(){
     switch(this.tipo){
       case 0:
-        return res+"="+arg1+op+arg2;
+        if(op.equals("if")){
+          return op+" "+arg1+" "+arg2+" "+res+"\n";
+        }
+        return res+" = "+arg1+" "+op+" "+arg2+"\n";
       case 1:
-        return op;
+        if(op.equals("label")){
+          return res+": ";
+        }
+        return op+" "+res+"\n";
       case 2:
-        return op; 
+        return op+"\n"; 
       default:
-        return res+arg1+op+arg2;
+        return res+arg1+op+arg2+"\n";
     }
   }
 }

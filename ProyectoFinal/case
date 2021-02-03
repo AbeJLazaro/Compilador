@@ -1,0 +1,14 @@
+func void A(){
+  int a,b,c;
+
+  switch(a){
+    case 1:
+      print a;
+      break;
+    case 2:
+      print b;
+      break;
+    default:
+      print c;
+  }
+}
