@@ -4,8 +4,8 @@ Autores:      Camacho Morales Gerardo Iván
               Lázaro Martínez Abraham Josué
               Oropeza Castañeda Ángel Eduardo
 
-Versión:      1.2
-Fecha:        10 de enero de 2021
+Versión:      1.5
+Fecha:        6 de febrero de 2021
 Nombre:       Parser.java
 */
 
@@ -123,7 +123,6 @@ public class Parser{
     PilaTT.peek().printTT();
     PilaTS.peek().printTS();
     System.out.println(codigo.getCodigo());
-    //prueba();
   }
 
   public void prueba(){
@@ -323,15 +322,7 @@ public class Parser{
       case VOID:
 
         int tipoTipo = tipo();
-        String id = lexema;
 
-        if(!PilaTS.peek().buscar(id)){
-          eat(IDENTIFIER);
-          PilaTS.peek().insertar(new Simbolo(lexema,dir,tipoTipo,"var",null));
-          dir += PilaTT.peek().getTam(tipoTipo);
-        }else{
-          error("Error semántico, el identificador "+id+" ya se encuentra delarado como argumento");
-        }
         ArrayList<Integer> lista_argsLista = lista_args_p();
         lista_argsLista.add(tipoTipo);
 
@@ -347,15 +338,6 @@ public class Parser{
       eat(COMA);
 
       int tipoTipo = tipo();
-      String id = lexema;
-
-      if(!PilaTS.peek().buscar(id)){
-        eat(IDENTIFIER);
-        PilaTS.peek().insertar(new Simbolo(lexema,dir,tipoTipo,"var",null));
-        dir += PilaTT.peek().getTam(tipoTipo);
-      }else{
-        error("Error semántico, el identificador "+id+" ya se encuentra delarado como argumento");
-      }
 
       ArrayList<Integer> lista_argsLista = lista_args_p();
       lista_argsLista.add(tipoTipo);
@@ -368,8 +350,7 @@ public class Parser{
     if(tokenActual==L1){
       eat(L1);
       declaraciones();
-      codigo.genCod("label",bloqueSig); //**********************************************************
-      instrucciones(bloqueSig);
+      instrucciones();
       eat(L2);
     }else{
       error("Error sintáctico, se esperaba {");
@@ -378,14 +359,14 @@ public class Parser{
   /*
     BRIAN *************************************************
   */
-  private void instrucciones(String instruccionesSig) throws IOException,ErrorCompilador{
+  private void instrucciones() throws IOException,ErrorCompilador{
     String sentenciaSig = Semantico.nuevaEtiqueta();
     sentencia(sentenciaSig);
     codigo.genCod("label",sentenciaSig);
-    instrucciones_p(instruccionesSig);
+    instrucciones_p();
   }
 
-  private void instrucciones_p(String instrucciones_pSig) throws IOException,ErrorCompilador{
+  private void instrucciones_p() throws IOException,ErrorCompilador{
     switch(tokenActual){
       case IF:
       case IDENTIFIER:
@@ -397,8 +378,8 @@ public class Parser{
       case RETURN:
         String sentenciaSig = Semantico.nuevaEtiqueta();
         sentencia(sentenciaSig);
-        instrucciones_p(instrucciones_pSig);
         codigo.genCod("label",sentenciaSig);
+        instrucciones_p();
         break;
       //default:
         //producción vacía
@@ -424,7 +405,7 @@ public class Parser{
         sentencia1Sig = sentenciaSig;
         codigo.genCod("label",boolVddr);
 
-        sentencia(sentenciaSig);
+        sentencia(sentencia1Sig);
         
         String condicionalSig = sentenciaSig;
         ArrayList<String> condicionalListaIndices = Semantico.nuevaListaIndices();
@@ -599,7 +580,7 @@ public class Parser{
     String casoInicio = Semantico.nuevaEtiqueta();
     String casoPrueba = "if "+casoId+"=="+numero+" goto "+casoInicio;
     codigo.genCod("label",casoInicio);
-    instrucciones(casoSig);
+    instrucciones();
 
     return casoPrueba+"\n";
   }
@@ -611,7 +592,7 @@ public class Parser{
     String instruccionesSig = predeterminadoSig;
     String predeterminadoPrueba = "goto "+predeterminadoInicio;
     codigo.genCod("label",predeterminadoInicio);
-    instrucciones(instruccionesSig);
+    instrucciones();
     return predeterminadoPrueba+"\n";
   }
 
@@ -669,20 +650,22 @@ public class Parser{
   */
   
   // bool -> comb bool_p
-  private ArrayList<String> bool(String boolVddr,String boolFls) throws IOException,ErrorCompilador{
+  private ArrayList<String> bool(String boolVddr, String boolFls) throws IOException,ErrorCompilador{
+
     String combVddr = boolVddr;
     String combFls = Semantico.nuevoIndice();
-
     ArrayList <String> combAtributos = comb(combVddr,combFls);
     String combTipo = combAtributos.get(0);
     String combDir = combAtributos.get(1);
-
+    
+    String bool_pVddr = boolVddr;
+    String bool_pFls = boolFls;
     String bool_pTipoH = combTipo;
     ArrayList<String> bool_pListaIndices = Semantico.nuevaListaIndices();
     bool_pListaIndices.add(combFls);
-    codigo.genCod("label",combFls);
+    codigo.genCod("label",combFls); 
 
-    ArrayList<String> bool_pAtributos = bool_p(boolVddr,boolFls,bool_pListaIndices,bool_pTipoH);
+    ArrayList<String> bool_pAtributos = bool_p(bool_pVddr,bool_pFls,bool_pListaIndices,bool_pTipoH);
     String boolTipo = bool_pAtributos.get(0);
 
     ArrayList<String> atributosRet = new ArrayList<String>();
@@ -701,17 +684,18 @@ public class Parser{
       String combTipo = combAtributos.get(0);
       String combDir = combAtributos.get(1);
 
-      if(Semantico.equivalentes(Integer.parseInt(bool_pTipoH), Integer.parseInt(combTipo))){
+      if(Semantico.equivalentes(bool_pTipoH, combTipo)){
 
         String bool_p1TipoH = combTipo;
         String bool_p1Vddr = bool_pVddr;
         String bool_p1Fls = bool_pFls;
         ArrayList<String> bool_p1ListaIndices = bool_pListaIndices;
         bool_p1ListaIndices.add(combFls);
-        codigo.genCod("label", bool_p1Fls);
+        codigo.genCod("label", combFls);
 
         ArrayList<String> bool_p1Atributos = bool_p(bool_pVddr,bool_pFls,bool_pListaIndices,bool_p1TipoH);
         String bool_p1TipoS = bool_p1Atributos.get(0);
+
         String bool_pTipoS = bool_p1TipoS;
 
         ArrayList<String> atributosRet = new ArrayList<String>();
@@ -736,18 +720,19 @@ public class Parser{
   private ArrayList<String> comb(String combVddr,String combFls) throws IOException, ErrorCompilador{
     String igualdadVddr = Semantico.nuevoIndice();
     String igualdadFls = combFls;
-
     ArrayList<String> igualdadAtributos = igualdad(igualdadVddr,igualdadFls);
     String igualdadTipo = igualdadAtributos.get(0);
     String igualdadDir = igualdadAtributos.get(1);
 
+    String comb_pVddr = combVddr;
+    String comb_pFls = combFls;
     String comb_pTipoH = igualdadTipo;
     ArrayList<String> comb_pListaIndices = Semantico.nuevaListaIndices();
     comb_pListaIndices.add(igualdadVddr);
-    //codigo.genCod("label",igualdadVddr); //*******************************************************
-    ArrayList<String> comb_pAtributos = comb_p(combVddr,combFls,comb_pListaIndices);
+    codigo.genCod("label",igualdadVddr);
+
+    ArrayList<String> comb_pAtributos = comb_p(comb_pVddr,comb_pFls,comb_pListaIndices,comb_pTipoH);
     String comb_pTipoS = comb_pAtributos.get(0);
-    // String comb_pDir = comb_pAtributos.get(1);
 
     String combTipo = comb_pTipoS;
 
@@ -758,29 +743,29 @@ public class Parser{
   }
   
   //comb_p → && igualdad comb_p | ε
-  private ArrayList<String> comb_p(String comb_pVddr,String comb_pFls, ArrayList<String> comb_pListaIndices) throws IOException, ErrorCompilador{
+  private ArrayList<String> comb_p(String comb_pVddr,String comb_pFls, ArrayList<String> comb_pListaIndices,String comb_pTipoH) throws IOException, ErrorCompilador{
     if(tokenActual == AND){
       eat(AND);
-        String igualdadVddr = Semantico.nuevoIndice();
-        String igualdadFls = comb_pFls;
 
-        ArrayList<String> igualdadAtributos = igualdad(igualdadVddr,igualdadFls);
-        String igualdadTipo = igualdadAtributos.get(0);
-        String igualdadDir = igualdadAtributos.get(1);
+      String igualdadVddr = Semantico.nuevoIndice();
+      String igualdadFls = comb_pFls;
 
+      ArrayList<String> igualdadAtributos = igualdad(igualdadVddr,igualdadFls);
+      String igualdadTipo = igualdadAtributos.get(0);
+      String igualdadDir = igualdadAtributos.get(1);
+
+      if(Semantico.equivalentes(comb_pTipoH, igualdadTipo)){
+        
         String comb_p1TipoH = igualdadTipo;
         String comb_p1Vddr = comb_pVddr;
         String comb_p1Fls = comb_pFls;
         ArrayList<String> comb_p1ListaIndices = comb_pListaIndices;
         comb_p1ListaIndices.add(igualdadVddr);
+        codigo.genCod("label", igualdadVddr);
 
-        ArrayList<String> comb_p1Atributos = comb_p(comb_p1Vddr,comb_p1Fls,comb_p1ListaIndices);
+        ArrayList<String> comb_p1Atributos = comb_p(comb_p1Vddr,comb_p1Fls,comb_p1ListaIndices,comb_p1TipoH);
         String comb_p1TipoS = comb_p1Atributos.get(0);
-
-      if(Semantico.equivalentes(Integer.parseInt(comb_p1TipoH), Integer.parseInt(igualdadTipo))){
-        
         String comb_pTipoS = comb_p1TipoS;
-        codigo.genCod("label", igualdadVddr); 
 
         ArrayList<String> atributosRet = new ArrayList<String>();
         atributosRet.add(comb_pTipoS);
@@ -801,278 +786,216 @@ public class Parser{
   
   //igualdad → rel igualdad_p
   private ArrayList<String> igualdad(String igualdadVddr, String igualdadFls) throws IOException,ErrorCompilador{
-    int igualdadTipo = 0; //int
-    String igualdadDir="";
 
     String relVddr = igualdadVddr;
     String relFls = igualdadFls;
-    String igualdad_pVddr = igualdadVddr;
-    String igualdad_pFls = igualdadFls;
-
     ArrayList<String> relAtributos = rel(relVddr,relFls);
-    ArrayList<String> igualdad_pAtributos = igualdad_p(igualdad_pVddr,igualdad_pFls);
-
-    int relTipo = Integer.parseInt(relAtributos.get(0));
+    String relTipo = relAtributos.get(0);
     String relDir = relAtributos.get(1);
 
-    int igualdad_pTipo = Integer.parseInt(igualdad_pAtributos.get(0));
-    String igualdad_pDir = igualdad_pAtributos.get(1);
-    String igualdad_pOp = igualdad_pAtributos.get(2);
+    String igualdad_pVddr = igualdadVddr;
+    String igualdad_pFls = igualdadFls;
+    String igualdad_pTipoH = relTipo;
+    String igualdad_pDirH = relDir;
+    
+    ArrayList<String> igualdad_pAtributos = igualdad_p(igualdad_pVddr,igualdad_pFls,igualdad_pTipoH,igualdad_pDirH);
+    String igualdad_pTipoS = igualdad_pAtributos.get(0);
+    String igualdad_pDirS = igualdad_pAtributos.get(1);
 
     ArrayList<String> atributosRet = new ArrayList<String>();
-
-    int tipoTemp;
-    String d1,d2;
-
-    if(Semantico.equivalentes(igualdad_pTipo,relTipo)){
-      if(igualdad_pTipo!=-1){
-        igualdadDir = Semantico.nuevaTemporal();
-        tipoTemp = Semantico.maximo(igualdad_pTipo, relTipo); 
-        d1 = Semantico.ampliar(igualdad_pDir, igualdad_pTipo, tipoTemp,codigo);
-        d2 = Semantico.ampliar(relDir, relTipo, tipoTemp,codigo);
-        codigo.genCod(new Cuadrupla(igualdad_pOp,d1,d2,igualdadDir));
-        codigo.genCod(new Cuadrupla("if",igualdadDir,"goto",relVddr)); 
-        codigo.genCod("goto",relFls);
-      }else{
-        igualdadTipo=relTipo;
-        igualdadDir=relDir;
-      }
-      atributosRet.add(Integer.toString(igualdadTipo));
-      atributosRet.add(igualdadDir);
-      return atributosRet ;
-    }else{
-      error("Error semántico, tipos incompatibles");
-    }
-    return null;
+    atributosRet.add(igualdad_pTipoS);
+    atributosRet.add(igualdad_pDirS);
+    return atributosRet;
   }
   
   //igualdad_p → == rel igualdad_p | != rel igualdad_p | ε
-  private ArrayList<String> igualdad_p(String igualdad_pVddr, String igualdad_pFls) throws IOException,ErrorCompilador{
-    int igualdad_pTipo = 0; //int
-    String igualdad_pDir="";
-    String igualdad_pOp="";
-
-    String relVddr = igualdad_pVddr;
-    String relFls = igualdad_pFls;
-    String igualdad_p1Vddr = igualdad_pVddr;
-    String igualdad_p1Fls = igualdad_pFls;
-
-    ArrayList<String> atributosRet = new ArrayList<String>();
-    int tipoTemp;
-    String d1,d2;
-
+  private ArrayList<String> igualdad_p(String igualdad_pVddr, String igualdad_pFls, String igualdad_pTipoH, String igualdad_pDirH) throws IOException,ErrorCompilador{
+    String op="";
     if(tokenActual==IGUAL){
       eat(IGUAL);
-      igualdad_pOp="==";
+      op = "==";
     }else if(tokenActual==DESIGUAL){
       eat(DESIGUAL);
-      igualdad_pOp="!=";
+      op = "!=";
     }else{
-      igualdad_pTipo=-1;
-      igualdad_pDir="";
-      igualdad_pOp="";
-      atributosRet.add(Integer.toString(igualdad_pTipo));
-      atributosRet.add(igualdad_pDir);
-      atributosRet.add(igualdad_pOp);
+      ArrayList<String> atributosRet = new ArrayList<String>();
+      atributosRet.add(igualdad_pTipoH);
+      atributosRet.add(igualdad_pDirH);
       return atributosRet;
     }
-
+    String relVddr = igualdad_pVddr;
+    String relFls = igualdad_pFls;
     ArrayList<String> relAtributos = rel(relVddr,relFls);
-    ArrayList<String> igualdad_p1Atributos = igualdad_p(igualdad_p1Vddr,igualdad_p1Fls);
-
-    int relTipo = Integer.parseInt(relAtributos.get(0));
+    String relTipo = relAtributos.get(0);
     String relDir = relAtributos.get(1);
 
-    int igualdad_p1Tipo = Integer.parseInt(igualdad_p1Atributos.get(0));
-    String igualdad_p1Dir = igualdad_p1Atributos.get(1);
-    String igualdad_p1Op = igualdad_p1Atributos.get(2);
+    if(Semantico.equivalentes(igualdad_pTipoH,relTipo)){
+      String igualdad_p1Vddr = igualdad_pVddr;
+      String igualdad_p1Fls = igualdad_pFls;
+      String igualdad_p1TipoH = relTipo;
+      String igualdad_p1DirH = relDir;
 
-    if(Semantico.equivalentes(igualdad_p1Tipo,relTipo)){
-      if(igualdad_p1Tipo!=-1){
-        igualdad_pDir = Semantico.nuevaTemporal();
-        tipoTemp = Semantico.maximo(igualdad_p1Tipo, relTipo); 
-        d1 = Semantico.ampliar(igualdad_p1Dir, igualdad_p1Tipo, tipoTemp, codigo);
-        d2 = Semantico.ampliar(relDir, relTipo, tipoTemp, codigo);
-        codigo.genCod(new Cuadrupla(igualdad_p1Op,d1,d2,igualdad_pDir));
-        codigo.genCod("if "+igualdad_pDir+" goto "+relVddr); 
-        codigo.genCod("goto",relFls);
-      }else{
-        igualdad_pTipo=relTipo;
-        igualdad_pDir=relDir;
-      }
-      atributosRet.add(Integer.toString(igualdad_pTipo));
+      ArrayList<String> igualdad_p1Atributos = igualdad_p(igualdad_p1Vddr,igualdad_p1Fls,igualdad_p1TipoH,igualdad_p1DirH);
+      String igualdad_p1TipoS = igualdad_p1Atributos.get(0);
+      String igualdad_p1DirS = igualdad_p1Atributos.get(1);
+
+      String igualdad_pDir = Semantico.nuevaTemporal();
+      int tipoTemp = Semantico.maximo(igualdad_pTipoH,relTipo);
+      String d1 = Semantico.ampliar(igualdad_pDirH,igualdad_pTipoH,tipoTemp,codigo);
+      String d2 = Semantico.ampliar(relDir,relTipo,tipoTemp,codigo);
+
+      codigo.genCod(new Cuadrupla(op,d1,d2,igualdad_pDir));
+      codigo.genCod(new Cuadrupla("if",igualdad_pDir,"goto",relVddr));
+      codigo.genCod(new Cuadrupla("goto",relFls));
+
+      ArrayList<String> atributosRet = new ArrayList<String>();
+      atributosRet.add(igualdad_p1TipoS);
       atributosRet.add(igualdad_pDir);
-      atributosRet.add(igualdad_pOp);
       return atributosRet;
     }else{
-      error("Error semántico, tipos incompatibles");
+      error("Error semántico, tipos incomplatibles");
     }
     return null;
   }
   
   //rel → exp rel_p
   private ArrayList<String> rel(String relVddr,String relFls) throws IOException,ErrorCompilador{
-
     String expVddr = relVddr;
     String expFls = relFls;
-    String rel_pVddr = relVddr;
-    String rel_pFls = relFls;
-
-    int relTipo=0; //int
-    String relDir="";
-    ArrayList<String> atributosRet = new ArrayList<String>();
-
     ArrayList<String> expAtributos = exp(expVddr,expFls);
-    ArrayList<String> rel_pAtributos = rel_p(rel_pVddr,rel_pFls);
-
-    int expTipo = Integer.parseInt(expAtributos.get(0));
+    String expTipo = expAtributos.get(0);
     String expDir = expAtributos.get(1);
 
-    int rel_pTipo = Integer.parseInt(rel_pAtributos.get(0));
-    String rel_pDir = rel_pAtributos.get(1);
-    String rel_pOp = rel_pAtributos.get(2);
+    String rel_pVddr = relVddr;
+    String rel_pFls = relFls;
+    String rel_pTipoH = expTipo;
+    String rel_pDirH = expDir;
 
-    String d1, d2;
-    int tipoTemp;
-    if(Semantico.equivalentes(rel_pTipo,expTipo)){
-      if(rel_pTipo!=-1){
-        relDir = Semantico.nuevaTemporal(); 
-        tipoTemp = Semantico.maximo(rel_pTipo, expTipo); 
-        d1 = Semantico.ampliar(rel_pDir, rel_pTipo, tipoTemp, codigo); 
-        d2 = Semantico.ampliar(expDir, expTipo, tipoTemp, codigo);
-        codigo.genCod(new Cuadrupla(rel_pOp,d1,d2,relDir));
-        codigo.genCod("if "+relDir+" goto "+rel_pVddr); 
-        codigo.genCod("goto",rel_pFls);
-      }else{
-        relTipo = expTipo; 
-        relDir = expDir;
-      }
-      atributosRet.add(Integer.toString(relTipo));
-      atributosRet.add(relDir);
-      return atributosRet;
-    }else{
-      error("Error semántico, tipos incopatibles");
-    }
-    return null;
+    ArrayList<String> rel_pAtributos = rel_p(rel_pVddr,rel_pFls,rel_pTipoH,rel_pDirH);
+    String rel_pTipoS = rel_pAtributos.get(0);
+    String rel_pDirS = rel_pAtributos.get(1);
+
+    ArrayList<String> atributosRet = new ArrayList<String>();
+    atributosRet.add(rel_pTipoS);
+    atributosRet.add(rel_pDirS);
+    return atributosRet;
   }
   
   //rel_p → < exp | <= exp | >= exp | > exp | ε
-  private ArrayList<String> rel_p(String rel_pVddr,String rel_pFls) throws IOException,ErrorCompilador{
-
-    String expVddr = rel_pVddr;
-    String expFls = rel_pFls;
-
-    ArrayList<String> atributosRet = new ArrayList<String>();
-    String rel_pOp;
+  private ArrayList<String> rel_p(String rel_pVddr,String rel_pFls,String rel_pTipoH, String rel_pDirH) throws IOException,ErrorCompilador{
+    String op = "";
     if(tokenActual==LT){
       eat(LT);
-      rel_pOp = "<";
+      op = "<";
     }else if(tokenActual==LET){
       eat(LET);
-      rel_pOp = "<=";
+      op = "<=";
     }else if(tokenActual==MET){
       eat(MET);
-      rel_pOp = ">";
+      op = ">=";
     }else if(tokenActual==MT){
       eat(MT);
-      rel_pOp = ">=";
+      op = ">";
     }else{
-      atributosRet.add("-1");
-      atributosRet.add("");
-      atributosRet.add("");
+      ArrayList<String> atributosRet = new ArrayList<String>();
+      atributosRet.add(rel_pTipoH);
+      atributosRet.add(rel_pDirH);
       return atributosRet;
     }
 
-    atributosRet = exp(expVddr,expFls);
-    atributosRet.add(rel_pOp);
-    return atributosRet;
+    String expVddr = rel_pVddr;
+    String expFls = rel_pFls;
+    ArrayList<String> expAtributos = exp(expVddr,expFls);
+    String expTipo = expAtributos.get(0);
+    String expDir = expAtributos.get(1);
+
+    if(Semantico.equivalentes(rel_pTipoH,expTipo)){
+      String rel_p1Vddr = rel_pVddr;
+      String rel_p1Fls = rel_pFls;
+      String rel_p1TipoH = expTipo;
+      String rel_p1DirH = expTipo;
+
+      ArrayList<String> rel_p1Atributos = rel_p(rel_p1Vddr,rel_p1Fls,rel_p1TipoH,rel_p1DirH);
+      String rel_p1TipoS = rel_p1Atributos.get(0);
+      String rel_p1DirS = rel_p1Atributos.get(1);
+
+      String rel_pDir = Semantico.nuevaTemporal();
+      int tipoTemp = Semantico.maximo(rel_pTipoH,expTipo);
+      String d1 = Semantico.ampliar(rel_pDirH,rel_pTipoH,tipoTemp,codigo);
+      String d2 = Semantico.ampliar(expDir,expTipo,tipoTemp,codigo);
+
+      codigo.genCod(new Cuadrupla(op,d1,d2,rel_pDir));
+      codigo.genCod(new Cuadrupla("if",rel_pDir,"goto",rel_pVddr));
+      codigo.genCod(new Cuadrupla("goto",rel_pFls));
+
+      ArrayList<String> atributosRet = new ArrayList<String>();
+      atributosRet.add(rel_p1TipoS);
+      atributosRet.add(rel_pDir);
+      return atributosRet;
+    }else{
+      error("Error semántico, tipos incompatibles");
+    }
+    return null;
   }
   
   //exp → term exp_p
   private ArrayList<String> exp(String expVddr, String expFls) throws IOException,ErrorCompilador{
 
-    ArrayList<String> atributosRet = new ArrayList<String>();
-
     ArrayList<String> termAtributos = term();
-    ArrayList<String> exp_pAtributos = exp_p();
-
-    int termTipo = Integer.parseInt(termAtributos.get(0));
+    String termTipo = termAtributos.get(0);
     String termDir = termAtributos.get(1);
 
-    int exp_pTipo = Integer.parseInt(exp_pAtributos.get(0));
-    String exp_pDir = exp_pAtributos.get(1);
-    String exp_pOp = exp_pAtributos.get(2);
+    String exp_pTipoH = termTipo;
+    String exp_pDirH = termDir;
+    ArrayList<String> exp_pAtributos = exp_p(exp_pTipoH,exp_pDirH);
+    String exp_pTipoS = exp_pAtributos.get(0);
+    String exp_pDirS = exp_pAtributos.get(1);
 
-    if(Semantico.equivalentes(exp_pTipo, termTipo)){
-      int expTipo;
-      String expDir, d1, d2;
-
-      if(exp_pTipo != -1){
-        expTipo = Semantico.maximo(exp_pTipo, termTipo);
-        expDir = Semantico.nuevaTemporal();
-        d1 = Semantico.ampliar(exp_pDir, exp_pTipo, expTipo,codigo);
-        d2 = Semantico.ampliar(termDir, termTipo, expTipo,codigo);
-        codigo.genCod(new Cuadrupla(exp_pOp, d1, d2, expDir));
-      }else{
-        expTipo = termTipo;
-        expDir = termDir;
-      }
-
-      atributosRet.add(Integer.toString(expTipo));
-      atributosRet.add(expDir);
-      return atributosRet;
-    }else{
-      error("Error semántico tipos incompatibles");
-    }
-    return null;
+    ArrayList<String> atributosRet = new ArrayList<String>();
+    atributosRet.add(exp_pTipoS);
+    atributosRet.add(exp_pDirS);
+    return atributosRet;
   }
   
   //exp_p → + term exp_p | - term exp_p | ε
-  private ArrayList<String> exp_p() throws IOException,ErrorCompilador{
-    ArrayList<String> atributosRet = new ArrayList<String>();
-    String exp_pOp;
+  private ArrayList<String> exp_p(String exp_pTipoH, String exp_pDirH) throws IOException,ErrorCompilador{
+
+    String op = "";
     if(tokenActual==SUMA){
       eat(SUMA);
-      exp_pOp = "+";
+      op = "+";
     }else if(tokenActual==RESTA){
       eat(RESTA);
-      exp_pOp = "-";
+      op = "-";
     }else{
-      atributosRet.add("-1");
-      atributosRet.add("");
-      atributosRet.add("");
+      ArrayList<String> atributosRet = new ArrayList<String>();
+      atributosRet.add(exp_pTipoH);
+      atributosRet.add(exp_pDirH);
       return atributosRet;
     }
 
     ArrayList<String> termAtributos = term();
-    ArrayList<String> exp_p1Atributos = exp_p();
-    
-    int termTipo = Integer.parseInt(termAtributos.get(0));
+    String termTipo = termAtributos.get(0);
     String termDir = termAtributos.get(1);
 
-    int exp_p1Tipo = Integer.parseInt(exp_p1Atributos.get(0));
-    String exp_p1Dir = exp_p1Atributos.get(1);
-    String exp_p1Op = exp_p1Atributos.get(2);
+    if(Semantico.equivalentes(exp_pTipoH, termTipo)){
 
-    if(Semantico.equivalentes(exp_p1Tipo, termTipo)){
-      int exp_pTipo;
-      String exp_pDir, d1, d2;
+      String exp_p1TipoH = termTipo;
+      String exp_p1DirH = termDir;
+      ArrayList<String> exp_p1Atributos = exp_p(exp_p1TipoH,exp_p1DirH);
+      String exp_p1TipoS = exp_p1Atributos.get(0);
+      String exp_p1DirS = exp_p1Atributos.get(1);
 
-      if(exp_p1Tipo != -1){
-        exp_pTipo = Semantico.maximo(exp_p1Tipo, termTipo);
-        exp_pDir = Semantico.nuevaTemporal();
-        d1 = Semantico.ampliar(exp_p1Dir, exp_p1Tipo, exp_pTipo,codigo);
-        d2 = Semantico.ampliar(termDir, termTipo, exp_pTipo,codigo);
-        codigo.genCod(new Cuadrupla(exp_p1Op, d1, d2, exp_pDir));
-      }else{
-        exp_pTipo = termTipo;
-        exp_pDir = termDir;
-      }
-      atributosRet.add(Integer.toString(exp_pTipo));
+      int exp_pTipo = Semantico.maximo(exp_pTipoH, termTipo);
+      String exp_pDir = Semantico.nuevaTemporal();
+      String d1 = Semantico.ampliar(exp_pDirH, exp_pTipoH, exp_pTipo,codigo);
+      String d2 = Semantico.ampliar(termDir, termTipo, exp_pTipo,codigo);
+      codigo.genCod(new Cuadrupla(op, d1, d2, exp_pDir));
+
+      ArrayList<String> atributosRet = new ArrayList<String>();
+      atributosRet.add(exp_p1TipoS);
       atributosRet.add(exp_pDir);
-      atributosRet.add(exp_pOp);
       return atributosRet;
-
     }else{
       error("Error semántico tipos incompatibles");
     }
@@ -1085,106 +1008,108 @@ public class Parser{
   */
   //
   private ArrayList<String> term() throws IOException,ErrorCompilador{
-    ArrayList<String> unarAtributos = unario();
-    ArrayList<String> term_pAtributos = term_p();
-    ArrayList<String> atributosRet = new ArrayList<String>();
-
-    int term_pTipo = Integer.parseInt(term_pAtributos.get(0));
-    String term_pDir = term_pAtributos.get(1);
-    String term_pOp = term_pAtributos.get(2);
-
-    int unarTipo = Integer.parseInt(unarAtributos.get(0));
-    String unarDir = unarAtributos.get(1);
-    if(Semantico.equivalentes(term_pTipo, unarTipo)){
-      int termTipo;
-      String termDir, d1, d2;
-      if (term_pTipo != -1){
-        if(term_pOp != "%"){
-          termTipo = Semantico.maximo(term_pTipo, unarTipo);
-          termDir = Semantico.nuevaTemporal();
-          d1 = Semantico.ampliar(term_pDir, term_pTipo, termTipo,codigo);
-          d2 = Semantico.ampliar(unarDir, unarTipo, termTipo,codigo);
-          codigo.genCod(new Cuadrupla(term_pOp, d1,d2, termDir));
-        } else{
-          termTipo = 0; //int
-          termDir = Semantico.nuevaTemporal();
-          codigo.genCod(new Cuadrupla("%",unarDir, term_pDir, termDir));
-        }
-      }else{
-        termDir = unarDir;
-        termTipo = unarTipo;
-      }
-      //AÑADIR ATRIBUTOS A RETORNAR
-      atributosRet.add(Integer.toString(termTipo));
-      atributosRet.add(termDir);
-      return atributosRet;
-    }else{
-      error("Error semántico, tipos incompatibles");
-    }
-    return null;
-  }
-
-  private ArrayList<String> term_p() throws IOException,ErrorCompilador{
-    String term_pOp;
-    ArrayList<String> atributosRet = new ArrayList<String>();
-
-    switch(tokenActual){
-      case MULTI:
-        eat(MULTI);
-        term_pOp = "*";
-        break;
-      case DIVISION:
-        eat(DIVISION);
-        term_pOp = "/";
-        break;
-      case MODULO:
-        eat(MODULO);
-        term_pOp = "%";
-        break;
-      default:
-        atributosRet.add("-1");
-        atributosRet.add("");
-        atributosRet.add("");
-        return atributosRet;
-    }
 
     ArrayList<String> unarioAtributos = unario();
-    ArrayList<String> term_p1Atributos = term_p();
-
-    int term_p1Tipo = Integer.parseInt(term_p1Atributos.get(0));
-    String term_p1Dir = term_p1Atributos.get(1);
-    String term_p1Op = term_p1Atributos.get(2);
-
-    int unarioTipo = Integer.parseInt(unarioAtributos.get(0));
+    String unarioTipo = unarioAtributos.get(0);
     String unarioDir = unarioAtributos.get(1);
 
-    if(Semantico.equivalentes(term_p1Tipo, unarioTipo)){
-      int term_pTipo;
-      String term_pDir, d1, d2;
+    String term_pTipoH = unarioTipo;
+    String term_pDirH = unarioDir;
+    ArrayList<String> term_pAtributos = term_p(term_pTipoH,term_pDirH);
+    String term_pTipoS = term_pAtributos.get(0);
+    String term_pDirS = term_pAtributos.get(1);
 
-      if (term_p1Tipo != -1){
-        if(term_p1Op != "%"){
-          term_pTipo = Semantico.maximo(term_p1Tipo, unarioTipo);
-          term_pDir = Semantico.nuevaTemporal();
-          d1 = Semantico.ampliar(term_p1Dir, term_p1Tipo, term_pTipo,codigo);
-          d2 = Semantico.ampliar(unarioDir, unarioTipo, term_pTipo,codigo);
-          codigo.genCod(new Cuadrupla(term_p1Op, d1,d2, term_pDir));
-        }else{
-          term_pTipo = 0; //int
-          term_pDir = Semantico.nuevaTemporal();
-          codigo.genCod(new Cuadrupla("%",unarioDir, term_p1Dir, term_pDir));
-        }
+    ArrayList<String> atributosRet = new ArrayList<String>();
+    atributosRet.add(term_pTipoS);
+    atributosRet.add(term_pDirS);
+    return atributosRet;
+  }
+
+  private ArrayList<String> term_p(String term_pTipoH, String term_pDirH) throws IOException,ErrorCompilador{    
+    if(tokenActual==MULTI){
+      eat(MULTI);
+
+      ArrayList<String> unarioAtributos = unario();
+      String unarioTipo = unarioAtributos.get(0);
+      String unarioDir = unarioAtributos.get(1);
+
+      if(Semantico.equivalentes(term_pTipoH, unarioTipo)){
+        String term_p1TipoH = unarioTipo;
+        String term_p1DirH = unarioDir;
+        ArrayList<String> term_p1Atributos = term_p(term_p1TipoH,term_p1DirH);
+        String term_p1TipoS = term_p1Atributos.get(0);
+        String term_p1DirS = term_p1Atributos.get(1);
+
+        int term_pTipo = Semantico.maximo(term_pTipoH, unarioTipo);
+        String term_pDir = Semantico.nuevaTemporal();
+        String d1 = Semantico.ampliar(term_pDirH, term_pTipoH, term_pTipo,codigo);
+        String d2 = Semantico.ampliar(unarioDir, unarioTipo, term_pTipo,codigo);
+        codigo.genCod(new Cuadrupla("*", d1,d2, term_pDir));
+
+        ArrayList<String> atributosRet = new ArrayList<String>();
+        atributosRet.add(term_p1TipoS);
+        atributosRet.add(term_pDir);
+        return atributosRet;
       }else{
-        term_pDir = unarioDir;
-        term_pTipo = unarioTipo;
+        error("Error semántico, tipos incompatibles");
       }
+    }else if(tokenActual ==DIVISION){
+      eat(DIVISION);
 
-      atributosRet.add(Integer.toString(term_pTipo));
-      atributosRet.add(term_pDir);
-      atributosRet.add(term_pOp);
-      return atributosRet;
+      ArrayList<String> unarioAtributos = unario();
+      String unarioTipo = unarioAtributos.get(0);
+      String unarioDir = unarioAtributos.get(1);
+
+      if(Semantico.equivalentes(term_pTipoH, unarioTipo)){
+        String term_p1TipoH = unarioTipo;
+        String term_p1DirH = unarioDir;
+        ArrayList<String> term_p1Atributos = term_p(term_p1TipoH,term_p1DirH);
+        String term_p1TipoS = term_p1Atributos.get(0);
+        String term_p1DirS = term_p1Atributos.get(1);
+
+        int term_pTipo = Semantico.maximo(term_pTipoH, unarioTipo);
+        String term_pDir = Semantico.nuevaTemporal();
+        String d1 = Semantico.ampliar(term_pDirH, term_pTipoH, term_pTipo,codigo);
+        String d2 = Semantico.ampliar(unarioDir, unarioTipo, term_pTipo,codigo);
+        codigo.genCod(new Cuadrupla("/", d1,d2, term_pDir));
+
+        ArrayList<String> atributosRet = new ArrayList<String>();
+        atributosRet.add(term_p1TipoS);
+        atributosRet.add(term_pDir);
+        return atributosRet;
+      }else{
+        error("Error semántico, tipos incompatibles");
+      }
+    }else if(tokenActual ==MODULO){
+      eat(MODULO);
+
+      ArrayList<String> unarioAtributos = unario();
+      String unarioTipo = unarioAtributos.get(0);
+      String unarioDir = unarioAtributos.get(1);
+
+      if(Semantico.equivalentes(term_pTipoH, unarioTipo)){
+        String term_p1TipoH = unarioTipo;
+        String term_p1DirH = unarioDir;
+        ArrayList<String> term_p1Atributos = term_p(term_p1TipoH,term_p1DirH);
+        String term_p1TipoS = term_p1Atributos.get(0);
+        String term_p1DirS = term_p1Atributos.get(1);
+
+        int term_pTipo = 0; // int
+        String term_pDir = Semantico.nuevaTemporal();
+        codigo.genCod(new Cuadrupla("%", unarioDir,term_pDirH, term_pDir));
+
+        ArrayList<String> atributosRet = new ArrayList<String>();
+        atributosRet.add(term_p1TipoS);
+        atributosRet.add(term_pDir);
+        return atributosRet;
+      }else{
+        error("Error semántico, tipos incompatibles");
+      }
     }else{
-      System.out.println("Error semántico tipos incompatibles");
+      ArrayList<String> atributosRet = new ArrayList<String>();
+      atributosRet.add(term_pTipoH);
+      atributosRet.add(term_pDirH);
+      return atributosRet;
     }
     return null;
   }
@@ -1193,46 +1118,42 @@ public class Parser{
 
     ArrayList<String> atributosRet = new ArrayList<String>();
 
-    int unarioTipo;
+    String unarioTipo;
     String unarioDir,unarioOp;
 
     switch(tokenActual){
       case NEGACION:
         eat(NEGACION);
         unarioOp="!";
-        
         break;
       case RESTA:
         eat(RESTA);
         unarioOp="-";
         break;
-
       default:
 
         ArrayList<String> factorAtributos = factor();
-        int factorTipo = Integer.parseInt(factorAtributos.get(0));
+        String factorTipo = factorAtributos.get(0);
         String factorDir = factorAtributos.get(1);
 
         unarioDir = factorDir;
         unarioTipo = factorTipo;
 
-        atributosRet.add(Integer.toString(unarioTipo));
+        atributosRet.add(unarioTipo);
         atributosRet.add(unarioDir);
-        atributosRet.add("");
         return atributosRet;   
     }
 
     unarioDir = Semantico.nuevaTemporal();
+
     ArrayList<String> unario1Atributos = unario();
-    int unario1Tipo = Integer.parseInt(unario1Atributos.get(0));
+    String unario1Tipo = unario1Atributos.get(0);
     String unario1Dir = unario1Atributos.get(1);
-    String unario1Op = unario1Atributos.get(2);
 
-    codigo.genCod(new Cuadrupla(unario1Op, unario1Dir, "", unarioDir));
+    codigo.genCod(new Cuadrupla(unarioOp, unario1Dir, "", unarioDir));
 
-    atributosRet.add(Integer.toString(unario1Tipo));
+    atributosRet.add(unario1Tipo);
     atributosRet.add(unarioDir);
-    atributosRet.add(unarioOp);
     return atributosRet;
   }
 
@@ -1242,7 +1163,7 @@ public class Parser{
       //(bool)
       case P1:
         eat(P1);
-        atributosRet=bool("","");
+        atributosRet=bool(Semantico.nuevaEtiqueta(),Semantico.nuevaEtiqueta());
         eat(P2);
         return atributosRet;
       // número
@@ -1365,7 +1286,7 @@ public class Parser{
   }
 
   private ArrayList<Integer> lista_param() throws IOException,ErrorCompilador{
-    ArrayList<String> boolAtributos = bool("","");
+    ArrayList<String> boolAtributos = bool(Semantico.nuevaEtiqueta(),Semantico.nuevaEtiqueta());
     ArrayList<Integer> lista_param_pAtributos = lista_param_p();
     ArrayList<Integer> lista_param = lista_param_pAtributos;
     lista_param.add(Integer.parseInt(boolAtributos.get(0)));
@@ -1375,7 +1296,7 @@ public class Parser{
   private ArrayList<Integer> lista_param_p() throws IOException,ErrorCompilador{
     if(tokenActual==COMA){
       eat(COMA);
-      ArrayList<String> boolAtributos = bool("","");
+      ArrayList<String> boolAtributos = bool(Semantico.nuevaEtiqueta(),Semantico.nuevaEtiqueta());
       ArrayList<Integer> lista_param_p1Atributos = lista_param_p();
       ArrayList<Integer> lista_param = lista_param_p1Atributos;
       lista_param.add(Integer.parseInt(boolAtributos.get(0)));
@@ -1526,9 +1447,10 @@ public class Parser{
   // Método para avanzar de token
   public void eat(int i) throws IOException,ErrorCompilador{
     if(tokenActual==i){
+      System.out.println(lexema);
+
       tokenActual = analizadorLexico.yylex();
       lexema = analizadorLexico.yytext();
-      System.out.println(lexema);
       // se revisa que el nuevo token sea un número correcto
       if(tokenActual==-1){
         throw new ErrorCompilador("Error léxico, línea "+analizadorLexico.getYyline());

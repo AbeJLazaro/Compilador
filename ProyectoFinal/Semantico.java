@@ -25,6 +25,12 @@ public class Semantico{
     return false;
   }
 
+  public static boolean equivalentes(String t1, String t2){
+    int tipo1 = Integer.parseInt(t1);
+    int tipo2 = Integer.parseInt(t2); 
+    return equivalentes(tipo1,tipo2);
+  }
+
   // método que nos indica si los tipos de una lista son equivalentes a los de
   // un tipo especifico
   public static boolean equivalentesLista(ArrayList<Integer> lista, int tipo){
@@ -61,6 +67,10 @@ public class Semantico{
     return d;
   }
 
+  public static String ampliar(String d, String me, int mayor, CodigoIntermedio cod){
+    return ampliar(d,Integer.parseInt(me),mayor,cod);
+  }
+
   //método que encuentra el tipo de dato más grande
   public static int maximo(int a, int b){
     if(a==1 || b==1) {
@@ -68,6 +78,10 @@ public class Semantico{
     }else{
       return 0;
     } 
+  }
+
+  public static int maximo(String A, String B){
+    return maximo(Integer.parseInt(A),Integer.parseInt(B));
   }
 
   // Método para reducir un tipo de dato
@@ -109,6 +123,7 @@ public class Semantico{
       if(etq.equals(lista.get(lista.size()-1))){
         for (Cuadrupla c:listaCuadruplas) {
           if(c.res.equals(etq)){
+            //System.out.println("\tSe cambia "+c.res+" por "+etiqueta+" que es la última");
             c.res=etiqueta;
           }
         }
@@ -116,6 +131,7 @@ public class Semantico{
         String etq_p = Semantico.nuevaEtiqueta();
         for (Cuadrupla c:listaCuadruplas) {
           if(c.res.equals(etq)){
+            //System.out.println("\tSe cambia "+c.res+" por "+etq_p);
             c.res=etq_p;
           }
         }

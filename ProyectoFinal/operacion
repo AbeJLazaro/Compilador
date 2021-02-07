@@ -1,0 +1,5 @@
+func void A(){
+  int a,b,c;
+
+  a = b*c /12 -5*30%c;
+}
