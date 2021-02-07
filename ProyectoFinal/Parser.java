@@ -91,6 +91,8 @@ public class Parser{
 
   private CodigoIntermedio codigo;
 
+  private Stack<String> pilaBreak;
+
 
   //CONSTRUCTOR 
   public Parser(Lexer lexer) throws IOException,ErrorCompilador{
@@ -113,6 +115,8 @@ public class Parser{
 
     codigo = new CodigoIntermedio();
 
+    pilaBreak = new Stack<String>(); 
+
     arreglo = false;
   }
 
@@ -130,6 +134,7 @@ public class Parser{
     for (int i = 0;i<10;i++) {
       String ind = Semantico.nuevoIndice();
       lista.add(ind);
+      System.out.println("prueba,ind");
       codigo.genCod("label",ind);
     }
     
@@ -274,7 +279,7 @@ public class Parser{
 
         // bloque
         String bloqueSig = Semantico.nuevaEtiqueta();
-
+        System.out.println("funciones,id");
         codigo.genCod("label",id);
 
         // bloque
@@ -362,6 +367,7 @@ public class Parser{
   private void instrucciones() throws IOException,ErrorCompilador{
     String sentenciaSig = Semantico.nuevaEtiqueta();
     sentencia(sentenciaSig);
+    System.out.println("Instrucciones,sentenciaSig");
     codigo.genCod("label",sentenciaSig);
     instrucciones_p();
   }
@@ -376,8 +382,11 @@ public class Parser{
       case L1:
       case SWITCH:
       case RETURN:
+      case PRINT:
+      case SCAN:
         String sentenciaSig = Semantico.nuevaEtiqueta();
         sentencia(sentenciaSig);
+        System.out.println("instrucciones_p,sentenciaSig");
         codigo.genCod("label",sentenciaSig);
         instrucciones_p();
         break;
@@ -403,6 +412,7 @@ public class Parser{
         eat(P2);
 
         sentencia1Sig = sentenciaSig;
+        System.out.println("sentencia,if,boolVddr");
         codigo.genCod("label",boolVddr);
 
         sentencia(sentencia1Sig);
@@ -441,8 +451,10 @@ public class Parser{
       case WHILE:
         eat(WHILE);
         eat(P1);
+        pilaBreak.push(sentenciaSig);
 
         sentencia1Sig = Semantico.nuevaEtiqueta();
+        System.out.println("sentencia,while,sentencia1Sig");
         codigo.genCod("label",sentencia1Sig);
 
         boolVddr = Semantico.nuevaEtiqueta();
@@ -451,31 +463,36 @@ public class Parser{
         bool(boolVddr,boolFls);
         eat(P2);
 
-        sentencia(sentencia1Sig);
+        System.out.println("sentencia,while,boolVddr");
         codigo.genCod("label",boolVddr);
+        sentencia(sentencia1Sig);
+        
         codigo.genCod("goto",sentencia1Sig);
-
+        pilaBreak.pop();
         break;
       case DO:
         eat(DO);
-
+        pilaBreak.push(sentenciaSig);
         sentencia1Sig = Semantico.nuevaEtiqueta();
         boolVddr = Semantico.nuevaEtiqueta();
         boolFls = sentenciaSig;
-
+        System.out.println("sentencia,dowhile,boolVddr");
         codigo.genCod("label",boolVddr);
         sentencia(sentencia1Sig);
+        System.out.println("sentencia,dowhile,sentencia1Sig");
         codigo.genCod("label",sentencia1Sig);
 
         eat(WHILE);
         eat(P1);
         bool(boolVddr,boolFls);
         eat(P2);
+        pilaBreak.pop();
         break;
       case BREAK:
         eat(BREAK);
         eat(PUNTOYCOMA);
-        codigo.genCod("goto",sentenciaSig);
+        System.out.println("sentencia,break");
+        codigo.genCod("goto",pilaBreak.peek());
         break;
       case L1:
         bloque(sentenciaSig);
@@ -486,17 +503,21 @@ public class Parser{
 
         boolAtributos = bool(Semantico.nuevaEtiqueta(),Semantico.nuevaEtiqueta());
         String casosEtqPrueba = Semantico.nuevaEtiqueta();
+        System.out.println("sentencia,switch,casosEtqPrueba");
         codigo.genCod("goto",casosEtqPrueba);
 
         eat(P2);
         eat(L1);
 
         String casosSig = sentenciaSig;
+        pilaBreak.push(casosSig);
         String casosId = boolAtributos.get(1);
         String casosPrueba = casos(casosSig, casosId);
 
         eat(L2);
+        codigo.genCod("label",casosEtqPrueba);
         codigo.genCod(casosPrueba);
+        pilaBreak.pop();
         break;
       case RETURN:
         eat(RETURN); 
@@ -526,6 +547,7 @@ public class Parser{
 
       String sentenciaSig = condicionalSig;
       codigo.genCod("goto", sentenciaSig);
+      System.out.println("condicional,condicionalListaIndices");
       codigo.genCod("label", condicionalListaIndices.get(0));
 
       sentencia(sentenciaSig);
@@ -555,11 +577,14 @@ public class Parser{
   private String casos(String casosSig, String casosId) throws IOException,ErrorCompilador{
     switch(tokenActual){
       case CASE:
-        String casoPrueba = caso(casosSig,casosId);
-        String casos1Prueba = casos(casosSig,casosId);
+        String casoSig = casosSig;
+        String casoPrueba = caso(casoSig,casosId);
+        String casos1Sig = casosSig;
+        String casos1Prueba = casos(casos1Sig,casosId);
         return casoPrueba + casos1Prueba;
       case DEFAULT:
-        String predeterminadoPrueba = predeterminado(casosSig);
+        String predeterminadoSig = casosSig;
+        String predeterminadoPrueba = predeterminado(predeterminadoSig);
         return predeterminadoPrueba;
     }
     return "";
@@ -579,7 +604,11 @@ public class Parser{
     
     String casoInicio = Semantico.nuevaEtiqueta();
     String casoPrueba = "if "+casoId+"=="+numero+" goto "+casoInicio;
+    System.out.println("caso,casoInicio");
     codigo.genCod("label",casoInicio);
+
+    String instruccionesSig = casoSig;
+
     instrucciones();
 
     return casoPrueba+"\n";
@@ -591,6 +620,7 @@ public class Parser{
     String predeterminadoInicio = Semantico.nuevaEtiqueta();
     String instruccionesSig = predeterminadoSig;
     String predeterminadoPrueba = "goto "+predeterminadoInicio;
+    System.out.println("caso,predeterminadoInicio");
     codigo.genCod("label",predeterminadoInicio);
     instrucciones();
     return predeterminadoPrueba+"\n";
@@ -663,9 +693,10 @@ public class Parser{
     String bool_pTipoH = combTipo;
     ArrayList<String> bool_pListaIndices = Semantico.nuevaListaIndices();
     bool_pListaIndices.add(combFls);
+    System.out.println("bool,combFls");
     codigo.genCod("label",combFls); 
 
-    ArrayList<String> bool_pAtributos = bool_p(bool_pVddr,bool_pFls,bool_pListaIndices,bool_pTipoH);
+    ArrayList<String> bool_pAtributos = bool_p(bool_pVddr,bool_pFls,bool_pListaIndices,bool_pTipoH,1);
     String boolTipo = bool_pAtributos.get(0);
 
     ArrayList<String> atributosRet = new ArrayList<String>();
@@ -675,7 +706,7 @@ public class Parser{
   }
   
   //bool_p → || comb bool_p | ε 
-  private ArrayList<String> bool_p(String bool_pVddr,String bool_pFls, ArrayList<String> bool_pListaIndices,String bool_pTipoH) throws IOException, ErrorCompilador{
+  private ArrayList<String> bool_p(String bool_pVddr,String bool_pFls, ArrayList<String> bool_pListaIndices,String bool_pTipoH,int flag) throws IOException, ErrorCompilador{
     if(tokenActual == OR){
       eat(OR);
       String combVddr = bool_pVddr;
@@ -691,9 +722,10 @@ public class Parser{
         String bool_p1Fls = bool_pFls;
         ArrayList<String> bool_p1ListaIndices = bool_pListaIndices;
         bool_p1ListaIndices.add(combFls);
+        System.out.println("bool_p,combFls");
         codigo.genCod("label", combFls);
 
-        ArrayList<String> bool_p1Atributos = bool_p(bool_pVddr,bool_pFls,bool_pListaIndices,bool_p1TipoH);
+        ArrayList<String> bool_p1Atributos = bool_p(bool_pVddr,bool_pFls,bool_pListaIndices,bool_p1TipoH,0);
         String bool_p1TipoS = bool_p1Atributos.get(0);
 
         String bool_pTipoS = bool_p1TipoS;
@@ -711,6 +743,7 @@ public class Parser{
       String bool_pTipoS = "0"; // int
       ArrayList<String> atributosRet = new ArrayList<String>();
       atributosRet.add(bool_pTipoS);
+      codigo.popCodigo();
       return atributosRet;
     }
     return null;
@@ -729,9 +762,10 @@ public class Parser{
     String comb_pTipoH = igualdadTipo;
     ArrayList<String> comb_pListaIndices = Semantico.nuevaListaIndices();
     comb_pListaIndices.add(igualdadVddr);
+    System.out.println("comb,igualdadVddr");
     codigo.genCod("label",igualdadVddr);
 
-    ArrayList<String> comb_pAtributos = comb_p(comb_pVddr,comb_pFls,comb_pListaIndices,comb_pTipoH);
+    ArrayList<String> comb_pAtributos = comb_p(comb_pVddr,comb_pFls,comb_pListaIndices,comb_pTipoH,1);
     String comb_pTipoS = comb_pAtributos.get(0);
 
     String combTipo = comb_pTipoS;
@@ -743,7 +777,7 @@ public class Parser{
   }
   
   //comb_p → && igualdad comb_p | ε
-  private ArrayList<String> comb_p(String comb_pVddr,String comb_pFls, ArrayList<String> comb_pListaIndices,String comb_pTipoH) throws IOException, ErrorCompilador{
+  private ArrayList<String> comb_p(String comb_pVddr,String comb_pFls, ArrayList<String> comb_pListaIndices,String comb_pTipoH, int flag) throws IOException, ErrorCompilador{
     if(tokenActual == AND){
       eat(AND);
 
@@ -761,9 +795,10 @@ public class Parser{
         String comb_p1Fls = comb_pFls;
         ArrayList<String> comb_p1ListaIndices = comb_pListaIndices;
         comb_p1ListaIndices.add(igualdadVddr);
+        System.out.println("comb_p,igualdadVddr");
         codigo.genCod("label", igualdadVddr);
 
-        ArrayList<String> comb_p1Atributos = comb_p(comb_p1Vddr,comb_p1Fls,comb_p1ListaIndices,comb_p1TipoH);
+        ArrayList<String> comb_p1Atributos = comb_p(comb_p1Vddr,comb_p1Fls,comb_p1ListaIndices,comb_p1TipoH,0);
         String comb_p1TipoS = comb_p1Atributos.get(0);
         String comb_pTipoS = comb_p1TipoS;
 
@@ -779,6 +814,7 @@ public class Parser{
       String comb_pTipoS = "0";
       ArrayList<String> atributosRet = new ArrayList<String>();
       atributosRet.add(comb_pTipoS);
+      codigo.popCodigo();
       return atributosRet;
     }
     return null;

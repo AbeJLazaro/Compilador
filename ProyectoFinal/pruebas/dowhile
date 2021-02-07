@@ -1,0 +1,11 @@
+func void A(){
+  int a,b,c;
+
+  do{
+    print a;
+    break;
+  }
+  while(a<b)
+
+  return;
+}

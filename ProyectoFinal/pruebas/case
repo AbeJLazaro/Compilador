@@ -7,6 +7,7 @@ func void A(){
       break;
     case 2:
       print b;
+      print a;
       break;
     default:
       print c;

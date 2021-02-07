@@ -1,9 +1,10 @@
 func void A(){
   int a,b,c;
 
-  do{
+  while(a<b){
     print a;
-  }while(a<b)
-
+    break;
+  }
+  
   return;
 }

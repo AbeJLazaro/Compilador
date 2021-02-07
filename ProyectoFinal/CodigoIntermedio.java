@@ -35,4 +35,8 @@ public class CodigoIntermedio{
     return this.codigo;
   }
 
+  public void popCodigo(){
+    this.codigo.remove(this.codigo.size()-1);
+  }
+
 }

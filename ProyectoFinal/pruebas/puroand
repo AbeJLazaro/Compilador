@@ -1,9 +1,9 @@
 func void A(){
   int a,b,c;
 
-  while(a<b){
+  if(a==b && b!=c && b==c)
     print a;
-  }
-  
+  else
+    print b;
   return;
 }

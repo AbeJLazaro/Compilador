@@ -123,7 +123,6 @@ public class Semantico{
       if(etq.equals(lista.get(lista.size()-1))){
         for (Cuadrupla c:listaCuadruplas) {
           if(c.res.equals(etq)){
-            //System.out.println("\tSe cambia "+c.res+" por "+etiqueta+" que es la última");
             c.res=etiqueta;
           }
         }
@@ -131,7 +130,6 @@ public class Semantico{
         String etq_p = Semantico.nuevaEtiqueta();
         for (Cuadrupla c:listaCuadruplas) {
           if(c.res.equals(etq)){
-            //System.out.println("\tSe cambia "+c.res+" por "+etq_p);
             c.res=etq_p;
           }
         }
