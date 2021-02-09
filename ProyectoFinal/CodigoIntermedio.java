@@ -1,3 +1,11 @@
+/*
+Autores:      Lázaro Martínez Abraham Josué
+              Oropeza Castañeda Ángel Eduardo
+
+Versión:      1
+Fecha:        8 de febrero de 2021
+Nombre:       CodigoIntermedio.java
+*/
 import java.util.ArrayList;
 
 public class CodigoIntermedio{

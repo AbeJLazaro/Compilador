@@ -1,3 +1,10 @@
+/*
+Autores:      Lázaro Martínez Abraham Josué
+
+Versión:      1
+Fecha:        8 de febrero de 2021
+Nombre:       TablaCadenas.java
+*/
 import java.util.ArrayList;
 
 public class TablaCadenas{
