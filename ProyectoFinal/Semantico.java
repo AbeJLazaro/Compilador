@@ -19,9 +19,18 @@ public class Semantico{
   // método que nos indica si dos tipos son equivalentes
   public static boolean equivalentes(int tipo1, int tipo2){
     if(tipo1 == tipo2) return true;
+    // int y float
     if(tipo1 == 0 && tipo2 == 1) return true;
     if(tipo1 == 1 && tipo2 == 0) return true;
-    if(tipo1 == -1 || tipo2==-1) return true;
+    // float y double
+    if(tipo1 == 2 && tipo2==1) return true;
+    if(tipo1 == 1 && tipo2==2) return true;
+    // int y double
+    if(tipo1 == 2 && tipo2==0) return true;
+    if(tipo1 == 0 && tipo2==2) return true;
+    // char y String
+    if(tipo1 == 3 && tipo2==5) return true;
+    if(tipo1 == 5 && tipo2==3) return true;
     return false;
   }
 
@@ -44,9 +53,14 @@ public class Semantico{
 
   // indica si dos listas de enteros son iguales
   public static boolean equivalentesListas(ArrayList<Integer> lista1, ArrayList<Integer> lista2){
+    if(lista1==null && lista2.size()==0) return true;
+    if(lista2==null && lista1.size()==0) return true;
+    if(lista1==null || lista2==null) return false;
     int t1 = lista1.size();
     int t2 = lista2.size();
     if(t1!=t1) return false;
+    if(t1==0 && t2==0) return true;
+    if(t1==0 || t2==0) return false;
     for (int i=0;i<t1;i++) {
       if(!equivalentes(lista1.get(i),lista2.get(i))){
         return false;
@@ -55,6 +69,8 @@ public class Semantico{
     return true;
   }
 
+  // int 0
+  // float 1
   // Método para ampliar un tipo de dato 
   public static String ampliar(String d, int menor, int mayor, CodigoIntermedio cod){
     if(menor == mayor) return d;
@@ -62,6 +78,16 @@ public class Semantico{
     if(menor==0 && mayor==1){
       temp = nuevaTemporal();
       cod.genCod(new Cuadrupla("(float)","",d,temp)); // temp = (float)d
+      return temp;
+    }
+    if(menor==1 && mayor==2){
+      temp = nuevaTemporal();
+      cod.genCod(new Cuadrupla("(double)","",d,temp)); // temp = (double)d
+      return temp;
+    }
+    if(menor==0 && mayor==2){
+      temp = nuevaTemporal();
+      cod.genCod(new Cuadrupla("(double)","",d,temp)); // temp = (double)d
       return temp;
     }
     return d;
@@ -73,11 +99,21 @@ public class Semantico{
 
   //método que encuentra el tipo de dato más grande
   public static int maximo(int a, int b){
-    if(a==1 || b==1) {
-      return 1;
-    }else{
-      return 0;
-    } 
+    if(a == b) return a;
+    // int y float
+    if(a == 0 && b == 1) return 1;
+    if(a == 1 && b == 0) return 1;
+    // float y double
+    if(a == 2 && b==1) return 2;
+    if(a == 1 && b==2) return 2;
+    // int y double
+    if(a == 2 && b==0) return 2;
+    if(a == 0 && b==2) return 2;
+    // char y String
+    if(a == 3 && b==5) return 5;
+    if(a == 5 && b==3) return 5;
+
+    return -1;
   }
 
   public static int maximo(String A, String B){
@@ -93,6 +129,22 @@ public class Semantico{
       cod.genCod(new Cuadrupla("(int)","",d,temp)); // temp = (int)d
       return temp;
     }
+    if(menor==0 && mayor==2){
+      temp = nuevaTemporal();
+      cod.genCod(new Cuadrupla("(int)","",d,temp)); // temp = (int)d
+      return temp;
+    }
+    if(menor==1 && mayor==2){
+      temp = nuevaTemporal();
+      cod.genCod(new Cuadrupla("(float)","",d,temp)); // temp = (float)d
+      return temp;
+    }
+    if(menor==3 && mayor==5){
+      temp = nuevaTemporal();
+      cod.genCod(new Cuadrupla("(char)","",d,temp)); // temp = (char)d
+      return temp;
+    }
+
     return d;
   }
 
@@ -117,7 +169,6 @@ public class Semantico{
 
   // método para reemplazar los indices
   public static void reemplazarIndices(ArrayList<String> lista, String etiqueta, CodigoIntermedio codigo){
-
     ArrayList<Cuadrupla> listaCuadruplas = codigo.getCodigoCuadruplas();
     for (String etq:lista){
       if(etq.equals(lista.get(lista.size()-1))){

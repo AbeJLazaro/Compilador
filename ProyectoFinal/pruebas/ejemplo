@@ -4,7 +4,7 @@ double c;
 char d;
 int[10][5] e,f,g,h;
 
-func int A(int a, float b, char c, double d, int[10] e){
+func int A(int a, float b, float d){
   int a1;
   float b1;
   double c1;
@@ -14,10 +14,16 @@ func int A(int a, float b, char c, double d, int[10] e){
 
   e1[1][1] = a+b;
   e2[1] = a+b;
-  if((e1[1][1] == 14) && (a%2==0)){
+  if(e1[1][1] == 14 && a%2==0){
     a=b*10;  
   }else
     a1=a-b;
 
   return a1;
+}
+
+func void main(){
+  int[10] b1;
+  int z;
+  z = A(1,1.2,2.2);
 }

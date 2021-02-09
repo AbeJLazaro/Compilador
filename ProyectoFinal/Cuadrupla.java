@@ -13,7 +13,6 @@ public class Cuadrupla{
     this.arg2 = arg2;
     this.res = res;
     this.tipo = 0;
-    System.out.println(toString());
   }
 
   public Cuadrupla(String op, String res){
@@ -22,7 +21,6 @@ public class Cuadrupla{
     this.arg2 = "";
     this.res = res;
     this.tipo = 1;
-    System.out.println(toString());
   }
 
   public Cuadrupla(String op){
@@ -31,7 +29,6 @@ public class Cuadrupla{
     this.arg2 = "";
     this.res = "";
     this.tipo = 2;
-    System.out.println(toString());
   }
   
   public String toString(){

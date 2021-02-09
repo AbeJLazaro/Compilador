@@ -16,4 +16,18 @@ public class TablaCadenas{
     return this.tabla.size()-1;
   }
 
+  public void printTC(){
+    if(tabla.size()==0){
+      System.out.println("Tabla de cadenas vacía");
+      return;
+    }
+    System.out.println("Tabla de cadenas");
+    System.out.println("id\tcadena");
+    int i =0;
+    for(String s: tabla){
+      System.out.println(i+"\t"+s);
+      i++;
+    }
+  }
+
 }

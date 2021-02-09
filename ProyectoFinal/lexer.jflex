@@ -5,8 +5,8 @@ Autores:      Cabrera Gaytán Jazmín Andrea
               Lázaro Martínez Abraham Josué
               Oropeza Castañeda Ángel Eduardo
 
-Versión:      1.2
-Fecha:        18 de enero de 2021
+Versión:      1.3
+Fecha:        8 de febrero de 2021
 Nombre:       lexer.jflex
 */
 import java.util.*;
@@ -72,6 +72,7 @@ private static final int COMA=38;
 //LITERALES
 private static final int IDENTIFIER=39;
 private static final int STRING_LIT=40;
+private static final int CHAR_LIT=48;
 private static final int TRUE=41;
 private static final int FALSE=42;
 private static final int INT_LIT=43;
@@ -96,6 +97,8 @@ public void limpiar(){
 
 letra=[a-zA-Z_]
 digito=[0-9]
+
+COMENTARIO= --.*|"<*"[^>]*"*>"
 
 //TIPOS DE DATOS
 INT=int
@@ -150,9 +153,14 @@ COMA=","
 identifier={letra}({letra}|{digito})*
 
 //STRING
+
 comillas1=\'((\\[uxnU\"\'\\])*([^\\\'])*)*\'
 comillas2=\"((\\[uxnU\"\'\\])*([^\\\"])*)*\"
 string_lit={comillas1}|{comillas2}
+
+comillas3=\'((\\[uxnU\"\'\\])|([^\\\']))\'
+comillas4=\"((\\[uxnU\"\'\\])|([^\\\"]))\"
+char_lit={comillas3}|{comillas4}
 
 //BOOLEANOS
 TRUE=true
@@ -201,6 +209,7 @@ enter=[\n]
 
 {float_lit} {anexar();return FLOAT_LIT;}
 
+{char_lit} {anexar();return CHAR_LIT;}
 {string_lit} {anexar();return STRING_LIT;}
 
 {ASIGNACION} {anexar();return ASIGNACION;}
@@ -229,4 +238,5 @@ enter=[\n]
 {PUNTOYCOMA} {anexar();return PUNTOYCOMA;}
 {COMA} {anexar();return COMA;}
 
+{COMENTARIO} {}
 . {anexar();return -1;}
