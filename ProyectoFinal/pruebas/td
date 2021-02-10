@@ -2,10 +2,11 @@ func void A(){
   int a;
   double b;
   char c;
+  --void z;
   a = 12;
   a = 12.2;
   b = a;
   b = 12.2;
   c = "a";
-  c = "hola mundo";
+  print "hola mundo";
 }

@@ -17,8 +17,16 @@ public class Main{
       BufferedReader br = new BufferedReader(fr);
       lexer = new Lexer(br);
       Parser parser = new Parser(lexer);
-      parser.parse();
+      String codigo = parser.parse();
+
       br.close();
+      
+      String nombre = args[0]+".ci";
+      File salida = new File(nombre);
+      FileWriter fw = new FileWriter(salida);
+      fw.write(codigo);
+      fw.close();
+      
     }catch(IOException e){
       System.out.println("Error al abrir el archivo");
     }catch(ErrorCompilador e){

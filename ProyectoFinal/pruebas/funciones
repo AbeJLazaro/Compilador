@@ -4,7 +4,7 @@ func int A(){
   return b;
 }
 
-func char B(int a, int b, float c){
+func char B(int a, int b, float c, double k, char v){
   int d;
   char p;
   d = A();
@@ -16,7 +16,9 @@ func void main(){
   int a,b;
   double c;
   char res;
-  res = B(a,b,c);
+  float f;
+  char j;
+  res = B(a,b,c,f,j);
 
   a = A();
 }

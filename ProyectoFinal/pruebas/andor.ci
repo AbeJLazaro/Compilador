@@ -1,0 +1,11 @@
+A: t0 = a == b
+if t0 goto etq3
+goto etq4
+etq3: t1 = b != c
+if t1 goto etq2
+goto etq4
+etq2: print a
+goto etq1
+etq4: print b
+etq1: return
+etq5: 

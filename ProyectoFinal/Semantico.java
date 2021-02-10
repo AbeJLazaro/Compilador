@@ -37,15 +37,12 @@ public class Semantico{
     // int y double
     if(tipo1 == 2 && tipo2==0) return true;
     if(tipo1 == 0 && tipo2==2) return true;
-    // char y String
-    if(tipo1 == 3 && tipo2==5) return true;
-    if(tipo1 == 5 && tipo2==3) return true;
     return false;
   }
 
   public static boolean equivalentes(String t1, String t2){
     int tipo1 = Integer.parseInt(t1);
-    int tipo2 = Integer.parseInt(t2); 
+    int tipo2 = Integer.parseInt(t2);
     return equivalentes(tipo1,tipo2);
   }
 
@@ -118,9 +115,6 @@ public class Semantico{
     // int y double
     if(a == 2 && b==0) return 2;
     if(a == 0 && b==2) return 2;
-    // char y String
-    if(a == 3 && b==5) return 5;
-    if(a == 5 && b==3) return 5;
 
     return -1;
   }
@@ -146,11 +140,6 @@ public class Semantico{
     if(menor==1 && mayor==2){
       temp = nuevaTemporal();
       cod.genCod(new Cuadrupla("(float)","",d,temp)); // temp = (float)d
-      return temp;
-    }
-    if(menor==3 && mayor==5){
-      temp = nuevaTemporal();
-      cod.genCod(new Cuadrupla("(char)","",d,temp)); // temp = (char)d
       return temp;
     }
 

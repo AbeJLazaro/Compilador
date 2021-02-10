@@ -122,13 +122,13 @@ public class Parser{
   }
 
   // método que inicia
-  public void parse() throws IOException,ErrorCompilador{
+  public String parse() throws IOException,ErrorCompilador{
     programa();
     System.out.println("Cadena aceptada");
     PilaTT.peek().printTT();
     PilaTS.peek().printTS();
     tablaCadenas.printTC();
-    System.out.println(codigo.getCodigo());
+    return codigo.getCodigo();
   }
 
   private void programa() throws IOException,ErrorCompilador{
@@ -201,6 +201,9 @@ public class Parser{
   */
   private void lista_var(int tipoTipo) throws IOException,ErrorCompilador{
     if(tokenActual==IDENTIFIER){
+      if(tipoTipo == 4){
+        error("Error semántico, no se pueden declarar variables de tipo void");
+      }
       if(!PilaTS.peek().buscar(lexema)){
         PilaTS.peek().insertar(new Simbolo(lexema,dir,tipoTipo,"var",null));
         dir += PilaTT.peek().getTam(tipoTipo);
@@ -1286,10 +1289,10 @@ public class Parser{
 
   private ArrayList<Integer> lista_param() throws IOException,ErrorCompilador{
     ArrayList<String> boolAtributos = bool(Semantico.nuevaEtiqueta(),Semantico.nuevaEtiqueta());
+    codigo.genCod("param",boolAtributos.get(1));
     ArrayList<Integer> lista_param_pAtributos = lista_param_p();
     ArrayList<Integer> lista_param = lista_param_pAtributos;
     lista_param.add(Integer.parseInt(boolAtributos.get(0)));
-    codigo.genCod("param",boolAtributos.get(1));
     return Semantico.invertir(lista_param); 
   }
 
@@ -1297,10 +1300,10 @@ public class Parser{
     if(tokenActual==COMA){
       eat(COMA);
       ArrayList<String> boolAtributos = bool(Semantico.nuevaEtiqueta(),Semantico.nuevaEtiqueta());
+      codigo.genCod("param",boolAtributos.get(1));
       ArrayList<Integer> lista_param_p1Atributos = lista_param_p();
       ArrayList<Integer> lista_param = lista_param_p1Atributos;
       lista_param.add(Integer.parseInt(boolAtributos.get(0)));
-      codigo.genCod("param",boolAtributos.get(1));
       return lista_param;
     }
     // producción vacía
