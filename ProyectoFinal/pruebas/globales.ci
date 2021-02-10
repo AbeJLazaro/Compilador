@@ -1,0 +1,11 @@
+A: t1 = 1 * 4
+t2 = t0 + t1
+t2 = 1 * 20
+e[t2] = a  
+etq1: t4 = 1 * 4
+t5 = t3 + t4
+t5 = 1 * 20
+t6 = e [t5]  
+a = t6  
+etq8: return a1
+etq15: 

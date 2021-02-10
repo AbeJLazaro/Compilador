@@ -69,6 +69,7 @@ public class Parser{
   private static final int FALSE=42;
   private static final int INT_LIT=43;
   private static final int FLOAT_LIT=44;
+  
   // otros atributos necesarios
   private Lexer analizadorLexico;
   private int tokenActual;
@@ -77,23 +78,24 @@ public class Parser{
   private int dir;
   private boolean arreglo;
 
-  // tablas globales, checar si son necesarias al final ********************************************
+  // tablas globales
   private TablaSimbolos fondoTS;
   private TablaTipos fondoTT;
 
   // pilas
   private Stack<TablaSimbolos> PilaTS;
   private Stack<TablaTipos> PilaTT;
-  private TablaCadenas tablaCadenas;
-
   private Stack<Integer> PilaDir;
-
-  private ArrayList<Integer> listaRetorno;
-
-  private CodigoIntermedio codigo;
-
   private Stack<String> pilaBreak;
 
+  // para los returns
+  private ArrayList<Integer> listaRetorno;
+
+  // tabla de cadenas
+  private TablaCadenas tablaCadenas;
+
+  // codigo intermedio
+  private CodigoIntermedio codigo;
 
   //CONSTRUCTOR 
   public Parser(Lexer lexer) throws IOException,ErrorCompilador{
@@ -1338,7 +1340,7 @@ public class Parser{
 
             codigo.genCod(new Cuadrupla("*",boolDir,Integer.toString(localizacion_pTam),localizacion_pDir));
 
-            localizacion_pAtributos = localizacion_p(localizacion_pTipo, localizacion_pDir);
+            localizacion_pAtributos = localizacion_p(localizacion_pTipo, localizacion_pDir,localizacion_pTam,0);
             localizacion_pTipoS = Integer.parseInt(localizacion_pAtributos.get(0));
             localizacion_pDirS = localizacion_pAtributos.get(1);
 
@@ -1363,7 +1365,7 @@ public class Parser{
         localizacion_pDir = Semantico.nuevaTemporal();
         localizacion_pTam = fondoTT.getTam(localizacion_pTipo);
 
-        localizacion_pAtributos = localizacion_p(localizacion_pTipo, localizacion_pDir);
+        localizacion_pAtributos = localizacion_p(localizacion_pTipo, localizacion_pDir,localizacion_pTam,1);
         localizacion_pTipoS = Integer.parseInt(localizacion_pAtributos.get(0));
         localizacion_pDirS = localizacion_pAtributos.get(1); 
 
@@ -1395,7 +1397,7 @@ public class Parser{
     return null;
   }
 
-  private ArrayList<String> localizacion_p(int localizacion_pTipo, String localizacion_pDir) throws IOException,ErrorCompilador{
+  private ArrayList<String> localizacion_p(int localizacion_pTipo, String localizacion_pDir, int localizacion_pTam, int global) throws IOException,ErrorCompilador{
     if(tokenActual==C1){
       eat(C1);
 
@@ -1406,31 +1408,53 @@ public class Parser{
       eat(C2);
 
       String dirTemp = Semantico.nuevaTemporal();
-
-      int localizacion_p1Tipo = PilaTT.peek().getTipoBase(localizacion_pTipo);
-      String localizacion_p1Dir = Semantico.nuevaTemporal();
-      int localizacion_p1Tam = PilaTT.peek().getTam(localizacion_p1Tipo); 
-
-      ArrayList<String> localizacion_p1Atributos = localizacion_p(localizacion_p1Tipo, localizacion_p1Dir);
-      int localizacion_p1TipoS = Integer.parseInt(localizacion_p1Atributos.get(0));
-      String localizacion_p1DirS = localizacion_p1Atributos.get(1);
-
       if(boolTipo == 0){
-        if(PilaTT.peek().getNombre(localizacion_pTipo).equals("array")){
+        if(global == 0){
+          int localizacion_p1Tipo = PilaTT.peek().getTipoBase(localizacion_pTipo);
+          String localizacion_p1Dir = Semantico.nuevaTemporal();
+          int localizacion_p1Tam = PilaTT.peek().getTam(localizacion_p1Tipo);
+          ArrayList<String> localizacion_p1Atributos = localizacion_p(localizacion_p1Tipo, localizacion_p1Dir,localizacion_p1Tam,0);
+          int localizacion_p1TipoS = Integer.parseInt(localizacion_p1Atributos.get(0));
+          String localizacion_p1DirS = localizacion_p1Atributos.get(1);
+          if(PilaTT.peek().getNombre(localizacion_pTipo).equals("array")){
 
-          codigo.genCod(new Cuadrupla("*", boolDir, Integer.toString(localizacion_p1Tam), dirTemp));                
-          codigo.genCod(new Cuadrupla("+", localizacion_pDir, dirTemp, localizacion_p1Dir));
+            codigo.genCod(new Cuadrupla("*", boolDir, Integer.toString(localizacion_p1Tam), dirTemp));                
+            codigo.genCod(new Cuadrupla("+", localizacion_pDir, dirTemp, localizacion_p1Dir));
 
-          localizacion_pDir = localizacion_p1DirS;
-          localizacion_pTipo = localizacion_p1TipoS;
+            localizacion_pDir = localizacion_p1DirS;
+            localizacion_pTipo = localizacion_p1TipoS;
 
-          ArrayList<String> atributosRet = new ArrayList<String>();
-          atributosRet.add(Integer.toString(localizacion_pTipo));
-          atributosRet.add(localizacion_pDir);
-          return atributosRet;
+            ArrayList<String> atributosRet = new ArrayList<String>();
+            atributosRet.add(Integer.toString(localizacion_pTipo));
+            atributosRet.add(localizacion_pDir);
+            return atributosRet;
 
+          }else{
+            error("Error semántico, el id no es un arreglo");
+          }
         }else{
-          error("Error semántico, el id no es un arreglo");
+          int localizacion_p1Tipo = fondoTT.getTipoBase(localizacion_pTipo);
+          String localizacion_p1Dir = Semantico.nuevaTemporal();
+          int localizacion_p1Tam = fondoTT.getTam(localizacion_p1Tipo);
+          ArrayList<String> localizacion_p1Atributos = localizacion_p(localizacion_p1Tipo, localizacion_p1Dir,localizacion_p1Tam,1);
+          int localizacion_p1TipoS = Integer.parseInt(localizacion_p1Atributos.get(0));
+          String localizacion_p1DirS = localizacion_p1Atributos.get(1);
+          if(fondoTT.getNombre(localizacion_pTipo).equals("array")){
+
+            codigo.genCod(new Cuadrupla("*", boolDir, Integer.toString(localizacion_p1Tam), dirTemp));                
+            codigo.genCod(new Cuadrupla("+", localizacion_pDir, dirTemp, localizacion_p1Dir));
+
+            localizacion_pDir = localizacion_p1DirS;
+            localizacion_pTipo = localizacion_p1TipoS;
+
+            ArrayList<String> atributosRet = new ArrayList<String>();
+            atributosRet.add(Integer.toString(localizacion_pTipo));
+            atributosRet.add(localizacion_pDir);
+            return atributosRet;
+
+          }else{
+            error("Error semántico, el id no es un arreglo");
+          }
         }
       }else{
         error("Error semántico, el indice de un arreglo debe ser entero");

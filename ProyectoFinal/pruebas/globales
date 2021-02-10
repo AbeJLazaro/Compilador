@@ -1,0 +1,12 @@
+int a;
+float b;
+double c;
+char d;
+int[10][5] e,f,g,h;
+
+func int A(int a, float b, float d){
+  int a1;
+  e[1][1] = a;
+  a = e[1][1];
+  return a1;
+}
