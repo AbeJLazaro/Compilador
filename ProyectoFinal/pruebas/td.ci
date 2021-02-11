@@ -1,0 +1,8 @@
+A: a = 12  
+etq1: t0 =  (int) 12.2
+a = t0  
+etq4: b = a  
+etq7: b = 12.2  
+etq10: c = "a"  
+etq13: print SP0
+etq16: 

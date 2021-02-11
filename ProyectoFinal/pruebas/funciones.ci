@@ -1,0 +1,14 @@
+A: return b
+etq1: B: t0 = call A , 0
+d = t0  
+etq3: return p
+etq6: main: param a
+param b
+param c
+param f
+param j
+t1 = call B , 5
+res = t1  
+etq8: t2 = call A , 0
+a = t2  
+etq21: 

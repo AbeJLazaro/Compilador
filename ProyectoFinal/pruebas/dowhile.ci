@@ -1,0 +1,7 @@
+A: etq3: print a
+etq4: goto etq1
+etq5: etq2: t0 = a < b
+if t0 goto etq3
+goto etq1
+etq1: return
+etq6: 

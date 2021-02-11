@@ -69,7 +69,7 @@ public class Parser{
   private static final int FALSE=42;
   private static final int INT_LIT=43;
   private static final int FLOAT_LIT=44;
-  
+
   // otros atributos necesarios
   private Lexer analizadorLexico;
   private int tokenActual;
@@ -126,7 +126,11 @@ public class Parser{
   // método que inicia
   public String parse() throws IOException,ErrorCompilador{
     programa();
-    System.out.println("Cadena aceptada");
+    if(tokenActual!=0){
+      error("Error sintáctico, algo raro pasó");
+      return null;
+    }
+    System.out.println("TABLAS GLOBALES************************************************************");
     PilaTT.peek().printTT();
     PilaTS.peek().printTS();
     tablaCadenas.printTC();
@@ -266,6 +270,7 @@ public class Parser{
 
         // comprobación
         if(Semantico.equivalentesLista(listaRetorno,tipoTipo)){
+          System.out.println("TABLAS DE LA FUNCIÓN "+id+" ******************************************");
           PilaTT.peek().printTT();
           PilaTS.peek().printTS();
           PilaTS.pop();
@@ -658,21 +663,23 @@ public class Parser{
     String bool_pVddr = boolVddr;
     String bool_pFls = boolFls;
     String bool_pTipoH = combTipo;
+    String bool_pDirH = combDir;
     ArrayList<String> bool_pListaIndices = Semantico.nuevaListaIndices();
     bool_pListaIndices.add(combFls);
     codigo.genCod("label",combFls); 
 
-    ArrayList<String> bool_pAtributos = bool_p(bool_pVddr,bool_pFls,bool_pListaIndices,bool_pTipoH);
-    String boolTipo = bool_pAtributos.get(0);
+    ArrayList<String> bool_pAtributos = bool_p(bool_pVddr,bool_pFls,bool_pListaIndices,bool_pTipoH,bool_pDirH);
+    String bool_pTipoS = bool_pAtributos.get(0);
+    String bool_pDirS = bool_pAtributos.get(1);
 
     ArrayList<String> atributosRet = new ArrayList<String>();
-    atributosRet.add(boolTipo);
-    atributosRet.add(combDir);
+    atributosRet.add(bool_pTipoS);
+    atributosRet.add(bool_pDirS);
     return atributosRet;
   }
   
   //bool_p → || comb bool_p | ε 
-  private ArrayList<String> bool_p(String bool_pVddr,String bool_pFls, ArrayList<String> bool_pListaIndices,String bool_pTipoH) throws IOException, ErrorCompilador{
+  private ArrayList<String> bool_p(String bool_pVddr,String bool_pFls, ArrayList<String> bool_pListaIndices,String bool_pTipoH, String bool_pDirH) throws IOException, ErrorCompilador{
     if(tokenActual == OR){
       eat(OR);
       String combVddr = bool_pVddr;
@@ -684,20 +691,21 @@ public class Parser{
       if(Semantico.equivalentes(bool_pTipoH, combTipo)){
 
         String bool_p1TipoH = combTipo;
+        String bool_p1DirH = combDir;
         String bool_p1Vddr = bool_pVddr;
         String bool_p1Fls = bool_pFls;
         ArrayList<String> bool_p1ListaIndices = bool_pListaIndices;
         bool_p1ListaIndices.add(combFls);
         codigo.genCod("label", combFls);
 
-        ArrayList<String> bool_p1Atributos = bool_p(bool_pVddr,bool_pFls,bool_pListaIndices,bool_p1TipoH);
+        ArrayList<String> bool_p1Atributos = bool_p(bool_pVddr,bool_pFls,bool_pListaIndices,bool_p1TipoH,bool_p1DirH);
         String bool_p1TipoS = bool_p1Atributos.get(0);
 
         String bool_pTipoS = bool_p1TipoS;
 
         ArrayList<String> atributosRet = new ArrayList<String>();
-        atributosRet.add(bool_pTipoS);
-        atributosRet.add(combDir);
+        atributosRet.add("0");
+        atributosRet.add(bool_p1DirH);
         return atributosRet;
 
       }else{
@@ -705,9 +713,9 @@ public class Parser{
       }
     }else{
       Semantico.reemplazarIndices(bool_pListaIndices, bool_pFls,codigo);
-      String bool_pTipoS = bool_pTipoH;
       ArrayList<String> atributosRet = new ArrayList<String>();
-      atributosRet.add(bool_pTipoS);
+      atributosRet.add(bool_pTipoH);
+      atributosRet.add(bool_pDirH);
       codigo.popCodigo();
       return atributosRet;
     }
@@ -725,23 +733,22 @@ public class Parser{
     String comb_pVddr = combVddr;
     String comb_pFls = combFls;
     String comb_pTipoH = igualdadTipo;
+    String comb_pDirH = igualdadDir;
     ArrayList<String> comb_pListaIndices = Semantico.nuevaListaIndices();
     comb_pListaIndices.add(igualdadVddr);
     codigo.genCod("label",igualdadVddr);
 
-    ArrayList<String> comb_pAtributos = comb_p(comb_pVddr,comb_pFls,comb_pListaIndices,comb_pTipoH);
+    ArrayList<String> comb_pAtributos = comb_p(comb_pVddr,comb_pFls,comb_pListaIndices,comb_pTipoH,comb_pDirH);
     String comb_pTipoS = comb_pAtributos.get(0);
-
-    String combTipo = comb_pTipoS;
-
+    String comb_pDirS = comb_pAtributos.get(1);
     ArrayList<String> atributosRet = new ArrayList<String>();
-    atributosRet.add(combTipo);
-    atributosRet.add(igualdadDir);
+    atributosRet.add(comb_pTipoS);
+    atributosRet.add(comb_pDirS);
     return atributosRet;
   }
   
   //comb_p → && igualdad comb_p | ε
-  private ArrayList<String> comb_p(String comb_pVddr,String comb_pFls, ArrayList<String> comb_pListaIndices,String comb_pTipoH) throws IOException, ErrorCompilador{
+  private ArrayList<String> comb_p(String comb_pVddr,String comb_pFls, ArrayList<String> comb_pListaIndices,String comb_pTipoH, String comb_pDirH) throws IOException, ErrorCompilador{
     if(tokenActual == AND){
       eat(AND);
 
@@ -755,28 +762,29 @@ public class Parser{
       if(Semantico.equivalentes(comb_pTipoH, igualdadTipo)){
         
         String comb_p1TipoH = igualdadTipo;
+        String comb_p1DirH = igualdadDir;
         String comb_p1Vddr = comb_pVddr;
         String comb_p1Fls = comb_pFls;
         ArrayList<String> comb_p1ListaIndices = comb_pListaIndices;
         comb_p1ListaIndices.add(igualdadVddr);
         codigo.genCod("label", igualdadVddr);
 
-        ArrayList<String> comb_p1Atributos = comb_p(comb_p1Vddr,comb_p1Fls,comb_p1ListaIndices,comb_p1TipoH);
-        String comb_p1TipoS = comb_p1Atributos.get(0);
-        String comb_pTipoS = comb_p1TipoS;
+        ArrayList<String> comb_p1Atributos = comb_p(comb_p1Vddr,comb_p1Fls,comb_p1ListaIndices,comb_p1TipoH,comb_p1DirH);
+        String comb_p1TipoS = "0";
+        String comb_p1DirS = comb_p1Atributos.get(1);
 
         ArrayList<String> atributosRet = new ArrayList<String>();
-        atributosRet.add(comb_pTipoS);
-        atributosRet.add(igualdadDir);
+        atributosRet.add(comb_p1TipoS);
+        atributosRet.add(comb_p1DirS);
         return atributosRet;
       }else{
         error("Error semántico: Tipos incompatibles");
       }
     }else{
       Semantico.reemplazarIndices(comb_pListaIndices, comb_pVddr, codigo);
-      String comb_pTipoS = comb_pTipoH;
       ArrayList<String> atributosRet = new ArrayList<String>();
-      atributosRet.add(comb_pTipoS);
+      atributosRet.add(comb_pTipoH);
+      atributosRet.add(comb_pDirH);
       codigo.popCodigo();
       return atributosRet;
     }
@@ -848,7 +856,7 @@ public class Parser{
       codigo.genCod(new Cuadrupla("goto",relFls));
 
       ArrayList<String> atributosRet = new ArrayList<String>();
-      atributosRet.add(igualdad_p1TipoS);
+      atributosRet.add("0");
       atributosRet.add(igualdad_pDir);
       return atributosRet;
     }else{
@@ -928,7 +936,7 @@ public class Parser{
       codigo.genCod(new Cuadrupla("goto",rel_pFls));
 
       ArrayList<String> atributosRet = new ArrayList<String>();
-      atributosRet.add(rel_p1TipoS);
+      atributosRet.add("0");
       atributosRet.add(rel_pDir);
       return atributosRet;
     }else{
@@ -992,7 +1000,7 @@ public class Parser{
       codigo.genCod(new Cuadrupla(op, d1, d2, exp_pDir));
 
       ArrayList<String> atributosRet = new ArrayList<String>();
-      atributosRet.add(exp_p1TipoS);
+      atributosRet.add(Integer.toString(exp_pTipo));
       atributosRet.add(exp_pDir);
       return atributosRet;
     }else{
@@ -1046,7 +1054,7 @@ public class Parser{
         codigo.genCod(new Cuadrupla("*", d1,d2, term_pDir));
 
         ArrayList<String> atributosRet = new ArrayList<String>();
-        atributosRet.add(term_p1TipoS);
+        atributosRet.add(Integer.toString(term_pTipo));
         atributosRet.add(term_pDir);
         return atributosRet;
       }else{
@@ -1073,7 +1081,7 @@ public class Parser{
         codigo.genCod(new Cuadrupla("/", d1,d2, term_pDir));
 
         ArrayList<String> atributosRet = new ArrayList<String>();
-        atributosRet.add(term_p1TipoS);
+        atributosRet.add(Integer.toString(term_pTipo));
         atributosRet.add(term_pDir);
         return atributosRet;
       }else{
@@ -1098,7 +1106,7 @@ public class Parser{
         codigo.genCod(new Cuadrupla("%", unarioDir,term_pDirH, term_pDir));
 
         ArrayList<String> atributosRet = new ArrayList<String>();
-        atributosRet.add(term_p1TipoS);
+        atributosRet.add(Integer.toString(term_pTipo));
         atributosRet.add(term_pDir);
         return atributosRet;
       }else{

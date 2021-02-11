@@ -1,0 +1,12 @@
+A: goto etq4
+etq5: print a
+etq6: goto etq1
+etq7: etq8: print b
+etq9: print a
+etq10: goto etq1
+etq11: etq12: print c
+etq13: etq4: if a==1 goto etq5
+if a==2 goto etq8
+goto etq12
+
+etq1: 

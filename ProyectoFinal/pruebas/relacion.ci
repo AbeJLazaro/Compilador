@@ -1,0 +1,14 @@
+A: t0 = a > b
+if t0 goto etq3
+goto etq4
+etq3: t1 = b < c
+if t1 goto etq2
+goto etq4
+etq4: t2 = b >= c
+if t2 goto etq2
+goto etq5
+etq2: print a
+goto etq1
+etq5: print b
+etq1: return
+etq6: 

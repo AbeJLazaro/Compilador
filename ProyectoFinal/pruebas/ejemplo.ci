@@ -1,0 +1,39 @@
+A: t0 = 1 * 20
+t1 = 1 * 4
+t2 = t0 + t1
+t4 =  (float) a
+t3 = t4 + b
+t5 =  (int) t3
+e1[t2] = t5  
+etq1: t6 = 1 * 4
+t8 =  (float) a
+t7 = t8 + b
+t9 =  (int) t7
+e2[t6] = t9  
+etq8: t10 = 1 * 20
+t11 = 1 * 4
+t12 = t10 + t11
+t13 = e1 [t12]  
+t14 = t13 == 14
+if t14 goto etq19
+goto etq25
+etq19: t15 = 2 % a
+t16 = t15 == 0
+if t16 goto etq14
+goto etq25
+etq14: t18 =  (float) 10
+t17 = b * t18
+t19 =  (int) t17
+a = t19  
+etq20: goto etq13
+etq25: t21 =  (float) a
+t20 = t21 - b
+t22 =  (int) t20
+a1 = t22  
+etq13: return a1
+etq26: main: param 1
+param 1.2
+param 2.2
+t23 = call A , 3
+z = t23  
+etq28: 
